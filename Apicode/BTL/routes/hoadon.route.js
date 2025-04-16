@@ -1,0 +1,10 @@
+var express = require('express');
+var router = express.Router();
+const hoadonController = require("../controllers/hoadon.controller");
+router.get('/status/:id', hoadonController.updateStatus);
+router.get('/', hoadonController.getAll);
+router.get('/:id',  hoadonController.getById);
+router.post('/',  hoadonController.insert);
+router.put('/:id',  hoadonController.update);
+router.delete('/:id', hoadonController.delete);
+module.exports = router;

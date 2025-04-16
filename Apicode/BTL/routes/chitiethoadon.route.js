@@ -1,0 +1,10 @@
+var express = require('express');
+var router = express.Router();
+const chitiethoadonController = require("../controllers/chitiethoadon.controller");
+router.get('/MaHD/:id', chitiethoadonController.getMaHD);
+router.get('/', chitiethoadonController.getAll);
+router.get('/:id',  chitiethoadonController.getById);
+router.post('/',  chitiethoadonController.insert);
+router.put('/:id',  chitiethoadonController.update);
+router.delete('/:id', chitiethoadonController.delete);
+module.exports = router;

@@ -1,0 +1,1 @@
+self.__REACT_LOADABLE_MANIFEST={"..\\node_modules\\primereact\\editor\\editor.esm.js -> quill":{"id":"..\\node_modules\\primereact\\editor\\editor.esm.js -> quill","files":["static/chunks/node_modules_quill_quill_js.js"]}}

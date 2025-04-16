@@ -1,0 +1,11 @@
+var express = require('express');
+var router = express.Router();
+const authenticateToken = require("../middlewares/authMiddlewares");
+const bacsiController = require("../controllers/bacsi.controller");
+// router.get('/', authenticateToken, bacsiController.getAll);
+router.get('/', bacsiController.getAll);
+router.get('/:id',  bacsiController.getById);
+router.post('/',  bacsiController.insert);
+router.put('/:id',  bacsiController.update);
+router.delete('/:id', bacsiController.delete);
+module.exports = router;

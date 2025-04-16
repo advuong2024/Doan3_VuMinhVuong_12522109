@@ -1,0 +1,68 @@
+{
+    "data": [
+        {
+            "benhnhan_id": "1000",
+            "hoten": "Nguyễn Văn A",
+            "ngaysinh": "1990-05-10",
+            "gioitinh": "Nam",
+            "diachi": "123 Đường ABC, Quận 1, TP.HCM",
+            "email": "nguyenvana@example.com",
+            "sdt": "0987654321"
+        },
+        {
+            "benhnhan_id": "1001",
+            "hoten": "Trần Thị B",
+            "ngaysinh": "1985-09-15",
+            "gioitinh": "Nữ",
+            "diachi": "456 Đường XYZ, Quận 3, TP.HCM",
+            "email": "tranthib@example.com",
+            "sdt": "0971234567"
+        },
+        {
+            "benhnhan_id": "1002",
+            "hoten": "Lê Văn C",
+            "ngaysinh": "1988-12-20",
+            "gioitinh": "Nam",
+            "diachi": "789 Đường LMN, Quận 5, TP.HCM",
+            "email": "levanc@example.com",
+            "sdt": "0962345678"
+        },
+        {
+            "benhnhan_id": "1003",
+            "hoten": "Phạm Thị D",
+            "ngaysinh": "1992-03-25",
+            "gioitinh": "Nữ",
+            "diachi": "101 Đường UVW, Quận 7, TP.HCM",
+            "email": "phamthid@example.com",
+            "sdt": "0953456789"
+        },
+        {
+            "benhnhan_id": "1004",
+            "hoten": "Trần Thị B",
+            "ngaysinh": "1985-09-15",
+            "gioitinh": "Nữ",
+            "diachi": "456 Đường XYZ, Quận 3, TP.HCM",
+            "email": "tranthib@example.com",
+            "sdt": "0971234567"
+        },
+        {
+            "benhnhan_id": "1005",
+            "hoten": "Lê Văn C",
+            "ngaysinh": "1988-12-20",
+            "gioitinh": "Nam",
+            "diachi": "789 Đường LMN, Quận 5, TP.HCM",
+            "email": "levanc@example.com",
+            "sdt": "0962345678"
+        },
+        {
+            "benhnhan_id": "1006",
+            "hoten": "Phạm Thị D",
+            "ngaysinh": "1992-03-25",
+            "gioitinh": "Nữ",
+            "diachi": "101 Đường UVW, Quận 7, TP.HCM",
+            "email": "phamthid@example.com",
+            "sdt": "0953456789"
+        }
+    ]
+
+}
