@@ -65,9 +65,9 @@ function HeaderPage() {
 
                   <Nav.Link
                     as={Link}
-                    to="/Pricing"
-                    className={activeLink === "/Pricing" ? "text-dark fw-bold" : "text-light"}
-                    onClick={() => setActiveLink("/Pricing")}
+                    to="/Price"
+                    className={activeLink === "/Price" ? "text-dark fw-bold" : "text-light"}
+                    onClick={() => setActiveLink("/Price")}
                   >
                     BẢNG GIÁ
                 </Nav.Link>
