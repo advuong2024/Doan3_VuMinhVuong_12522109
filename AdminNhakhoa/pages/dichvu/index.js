@@ -21,6 +21,12 @@ const dichvuManagement = () => {
     const [selectedImage, setSelectedImage] = useState(null);
     const toast = useRef(null);
     const [anh_event, setanhs] = useState([])
+    const [errors, setErrors] = useState({
+        ten_event: '',
+        mo_ta: '',
+        gia_event: '',
+        anh_event: ''
+    });
 
     useEffect(() => {
         let isMounted = true;
@@ -33,14 +39,68 @@ const dichvuManagement = () => {
         return () => { isMounted = false; };
     }, []);
 
+    const validateForm = () => {
+        let valid = true;
+        let newErrors = {
+            ten_event: '',
+            mo_ta: '',
+            gia_event: '',
+            anh_event: ''
+        };
+
+        // Validate tên dịch vụ
+        if (!dichvu.ten_event.trim()) {
+            newErrors.ten_event = 'Tên dịch vụ không được để trống';
+            valid = false;
+        } else if (dichvu.ten_event.length < 3) {
+            newErrors.ten_event = 'Tên dịch vụ phải có ít nhất 3 ký tự';
+            valid = false;
+        }
+
+        // Validate mô tả
+        if (!dichvu.mo_ta.trim()) {
+            newErrors.mo_ta = 'Mô tả không được để trống';
+            valid = false;
+        }
+
+        // Validate giá
+        if (!dichvu.gia_event || dichvu.gia_event <= 0) {
+            newErrors.gia_event = 'Giá phải lớn hơn 0';
+            valid = false;
+        }
+
+        // Validate ảnh (chỉ kiểm tra khi thêm mới)
+        if (!dichvu.dichvu_id && !selectedImage) {
+            newErrors.anh_event = 'Vui lòng chọn ảnh';
+            valid = false;
+        }
+
+        setErrors(newErrors);
+        return valid;
+    };
+
     const openNew = () => {
         setdichvu(emptydichvu);
+        setSelectedImage(null);
+        setSubmitted(false);
+        setErrors({
+            ten_event: '',
+            mo_ta: '',
+            gia_event: '',
+            anh_event: ''
+        });
         setdichvuDialog(true);
     };
 
     const hideDialog = () => {
         setdichvuDialog(false);
         setSubmitted(false);
+        setErrors({
+            ten_event: '',
+            mo_ta: '',
+            gia_event: '',
+            anh_event: ''
+        });
     };
 
     const LoadPage = async () => {
@@ -50,26 +110,35 @@ const dichvuManagement = () => {
 
     const savedichvu = async () => {
         setSubmitted(true);
-        if (dichvu.ten_event.trim()) {
-            let _dichvu = { ...dichvu };
-            try {
-                // Gọi hàm thêm mới hoặc cập nhật
-                if (dichvu.dichvu_id) {
-                    // Cập nhật dịch vụ
-                    await EventService.putdichvu(dichvu.dichvu_id, _dichvu, selectedImage);
-                    toast.current.show({ severity: 'success', summary: 'Thành công', detail: 'Cập nhật dịch vụ', life: 3000 });
-                } else {
-                    // Thêm dịch vụ mới
-                    _dichvu.dichvu_id = createId();
-                    await EventService.postdichvu(_dichvu, selectedImage);
-                    toast.current.show({ severity: 'success', summary: 'Thành công', detail: 'Thêm dịch vụ mới', life: 3000 });
-                }
-                setdichvuDialog(false);
-                setdichvu(emptydichvu);
-                LoadPage();
-            } catch (error) {
-                toast.current.show({ severity: 'error', summary: 'Lỗi', detail: 'Không thể xử lý yêu cầu', life: 3000 });
+        
+        if (!validateForm()) {
+            toast.current.show({
+                severity: 'warn',
+                summary: 'Cảnh báo',
+                detail: 'Vui lòng kiểm tra lại thông tin nhập',
+                life: 3000
+            });
+            return;
+        }
+
+        let _dichvu = { ...dichvu };
+        try {
+            if (dichvu.dichvu_id) {
+                // Cập nhật dịch vụ
+                await EventService.putdichvu(dichvu.dichvu_id, _dichvu, selectedImage);
+                toast.current.show({ severity: 'success', summary: 'Thành công', detail: 'Cập nhật dịch vụ', life: 3000 });
+            } else {
+                // Thêm dịch vụ mới
+                _dichvu.dichvu_id = createId();
+                await EventService.postdichvu(_dichvu, selectedImage);
+                toast.current.show({ severity: 'success', summary: 'Thành công', detail: 'Thêm dịch vụ mới', life: 3000 });
             }
+            setdichvuDialog(false);
+            setdichvu(emptydichvu);
+            setSelectedImage(null);
+            LoadPage();
+        } catch (error) {
+            toast.current.show({ severity: 'error', summary: 'Lỗi', detail: 'Không thể xử lý yêu cầu', life: 3000 });
         }
     };
 
@@ -213,17 +282,64 @@ const dichvuManagement = () => {
 
             <Dialog visible={dichvuDialog} onHide={() => setdichvuDialog(false)} header="Thông tin dịch vụ" footer={dichvuDialogFooter}>
                 <div className="p-fluid">
-                    <InputText value={dichvu.ten_event} onChange={e => setdichvu({ ...dichvu, ten_event: e.target.value })} placeholder="Tên dịch vụ" className="w-full mt-2"/>
-                    <InputText value={dichvu.mo_ta} onChange={e => setdichvu({ ...dichvu, mo_ta: e.target.value })} placeholder="Mô tả" className="w-full mt-2"/>
-                    <InputNumber value={dichvu.gia_event} onChange={e => setdichvu({ ...dichvu, gia_event:e.target.value })} placeholder="giá dịch vụ" className="w-full mt-2"
-                    mode="currency" currency="VND" locale="vi-VN"/>
-                    <div className="field mt-2">
-                        <label htmlFor="anh_event">Chọn ảnh</label>
+                    <div className="field">
+                        <label htmlFor="ten_event">Tên dịch vụ</label>
+                        <InputText 
+                            id="ten_event"
+                            value={dichvu.ten_event} 
+                            onChange={e => {
+                                setdichvu({ ...dichvu, ten_event: e.target.value });
+                                setErrors({ ...errors, ten_event: '' });
+                            }} 
+                            className={errors.ten_event ? 'p-invalid' : ''}
+                            placeholder="Nhập tên dịch vụ"
+                        />
+                        {errors.ten_event && <small className="p-error">{errors.ten_event}</small>}
+                    </div>
+
+                    <div className="field">
+                        <label htmlFor="mo_ta">Mô tả</label>
+                        <InputText 
+                            id="mo_ta"
+                            value={dichvu.mo_ta} 
+                            onChange={e => {
+                                setdichvu({ ...dichvu, mo_ta: e.target.value });
+                                setErrors({ ...errors, mo_ta: '' });
+                            }} 
+                            className={errors.mo_ta ? 'p-invalid' : ''}
+                            placeholder="Nhập mô tả"
+                        />
+                        {errors.mo_ta && <small className="p-error">{errors.mo_ta}</small>}
+                    </div>
+
+                    <div className="field">
+                        <label htmlFor="gia_event">Giá dịch vụ</label>
+                        <InputNumber 
+                            id="gia_event"
+                            value={dichvu.gia_event} 
+                            onValueChange={e => {
+                                setdichvu({ ...dichvu, gia_event: e.value });
+                                setErrors({ ...errors, gia_event: '' });
+                            }} 
+                            className={errors.gia_event ? 'p-invalid' : ''}
+                            placeholder="Nhập giá"
+                            mode="currency" 
+                            currency="VND" 
+                            locale="vi-VN"
+                        />
+                        {errors.gia_event && <small className="p-error">{errors.gia_event}</small>}
+                    </div>
+
+                    <div className="field">
+                        <label htmlFor="anh_event">Ảnh dịch vụ</label>
                         <input 
+                            id="anh_event"
                             type="file" 
                             accept="image/*" 
                             onChange={onFileUpload} 
+                            className={errors.anh_event ? 'p-invalid' : ''}
                         />
+                        {errors.anh_event && <small className="p-error">{errors.anh_event}</small>}
                         {selectedImage && (
                             <img 
                                 src={URL.createObjectURL(selectedImage)} 

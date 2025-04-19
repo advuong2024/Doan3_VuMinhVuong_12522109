@@ -20,6 +20,14 @@ const Khachhang = () => {
     const [submitted, setSubmitted] = useState(false);
     const [globalFilter, setGlobalFilter] = useState(null);
     const toast = useRef(null);
+    const [errors, setErrors] = useState({
+        hoten: '',
+        ngaysinh: '',
+        Gioitinh: '',
+        diachi: '',
+        email: '',
+        SDT: ''
+    });
 
     useEffect(() => {
         let isMounted = true;
@@ -32,25 +40,115 @@ const Khachhang = () => {
         return () => { isMounted = false; };
     }, []);
     
+    const validateForm = () => {
+        let valid = true;
+        let newErrors = {
+            hoten: '',
+            ngaysinh: '',
+            Gioitinh: '',
+            diachi: '',
+            email: '',
+            SDT: ''
+        };
+
+        // Validate họ tên
+        if (!khachhang.hoten.trim()) {
+            newErrors.hoten = 'Họ tên không được để trống';
+            valid = false;
+        } else if (khachhang.hoten.length < 3) {
+            newErrors.hoten = 'Họ tên phải có ít nhất 3 ký tự';
+            valid = false;
+        }
+
+        // Validate ngày sinh
+        if (!khachhang.ngaysinh) {
+            newErrors.ngaysinh = 'Ngày sinh không được để trống';
+            valid = false;
+        } else {
+            const dob = new Date(khachhang.ngaysinh);
+            const today = new Date();
+            let age = today.getFullYear() - dob.getFullYear();
+            const m = today.getMonth() - dob.getMonth();
+            
+            if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                age--;
+            }
+
+            if (age < 0 || age > 100) {
+                newErrors.ngaysinh = 'Tuổi phải từ 0 đến 100';
+                valid = false;
+            }
+        }
+
+        // Validate giới tính
+        if (!khachhang.Gioitinh) {
+            newErrors.Gioitinh = 'Vui lòng chọn giới tính';
+            valid = false;
+        }
+
+        // Validate địa chỉ
+        if (!khachhang.diachi.trim()) {
+            newErrors.diachi = 'Địa chỉ không được để trống';
+            valid = false;
+        }
+
+        // Validate email
+        if (!khachhang.email.trim()) {
+            newErrors.email = 'Email không được để trống';
+            valid = false;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(khachhang.email)) {
+            newErrors.email = 'Email không hợp lệ';
+            valid = false;
+        }
+
+        // Validate số điện thoại
+        if (!khachhang.SDT.trim()) {
+            newErrors.SDT = 'Số điện thoại không được để trống';
+            valid = false;
+        } else if (!/^\d{10}$/.test(khachhang.SDT)) {
+            newErrors.SDT = 'Số điện thoại phải là 10 chữ số';
+            valid = false;
+        }
+
+        setErrors(newErrors);
+        return valid;
+    };
+
     const openNew = () => {
         setKhachhang(emptyKhachhang);
         setSubmitted(false);
+        setErrors({
+            hoten: '',
+            ngaysinh: '',
+            Gioitinh: '',
+            diachi: '',
+            email: '',
+            SDT: ''
+        });
         setKhachhangDialog(true);
     };
 
     const hideDialog = () => {
         setSubmitted(false);
         setKhachhangDialog(false);
+        setErrors({
+            hoten: '',
+            ngaysinh: '',
+            Gioitinh: '',
+            diachi: '',
+            email: '',
+            SDT: ''
+        });
     };
+
     const LoadPage = async () => {
         const data = await KhachhangService.getKhachhang();
-        setKhachhangs(data); // Cập nhật danh sách khách hàng
+        setKhachhangs(data);
     };
     
     const formatDate = (dateString) => {
         if (!dateString) return "";
         
-        // Nếu đã đúng định dạng yyyy-MM-dd thì giữ nguyên
         if (typeof dateString === "string" && dateString.length === 10) return dateString;
     
         const d = new Date(dateString);
@@ -59,42 +157,41 @@ const Khachhang = () => {
 
     const saveKhachhang = async () => {
         setSubmitted(true);
-        if (khachhang.hoten.trim()) {
-            let _khachhang = { ...khachhang };
+        
+        if (!validateForm()) {
+            toast.current.show({
+                severity: 'warn',
+                summary: 'Cảnh báo',
+                detail: 'Vui lòng kiểm tra lại thông tin nhập',
+                life: 3000
+            });
+            return;
+        }
 
-            _khachhang.ngaysinh = formatDate(_khachhang.ngaysinh);
+        let _khachhang = { ...khachhang };
+        _khachhang.ngaysinh = formatDate(_khachhang.ngaysinh);
 
+        try {
             if (khachhang.benhnhan_id) {
-                try {
-                    const updatedKhachhang = await KhachhangService.putkhachhang(khachhang.benhnhan_id, _khachhang);
-    
-                    let _khachhangs = khachhangs.map(kh => 
-                        kh.benhnhan_id === khachhang.benhnhan_id ? updatedKhachhang : kh
-                    );
-    
-                    setKhachhangs(_khachhangs);
-                    toast.current.show({ severity: 'success', summary: 'Thành công', detail: 'Cập nhật khách hàng', life: 3000 });
-    
-                } catch (error) {
-                    console.error("Lỗi khi cập nhật khách hàng:", error);
-                    toast.current.show({ severity: 'error', summary: 'Lỗi', detail: 'Không thể cập nhật khách hàng', life: 3000 });
-                }
+                const updatedKhachhang = await KhachhangService.putkhachhang(khachhang.benhnhan_id, _khachhang);
+                let _khachhangs = khachhangs.map(kh => 
+                    kh.benhnhan_id === khachhang.benhnhan_id ? updatedKhachhang : kh
+                );
+                setKhachhangs(_khachhangs);
+                toast.current.show({ severity: 'success', summary: 'Thành công', detail: 'Cập nhật khách hàng', life: 3000 });
             } else {
-                try {
-                    _khachhang.benhnhan_id = createId();
-                    const newKhachhang = await KhachhangService.postkhachhang(_khachhang);
-    
-                    setKhachhangs([...khachhangs, newKhachhang]);
-                    toast.current.show({ severity: 'success', summary: 'Thành công', detail: 'Thêm khách hàng mới', life: 3000 });
-    
-                } catch (error) {
-                    console.error("Lỗi khi thêm khách hàng:", error);
-                    toast.current.show({ severity: 'error', summary: 'Lỗi', detail: 'Không thể thêm khách hàng', life: 3000 });
-                }
+                _khachhang.benhnhan_id = createId();
+                const newKhachhang = await KhachhangService.postkhachhang(_khachhang);
+                setKhachhangs([...khachhangs, newKhachhang]);
+                toast.current.show({ severity: 'success', summary: 'Thành công', detail: 'Thêm khách hàng mới', life: 3000 });
             }
+            
             setKhachhangDialog(false);
             setKhachhang(emptyKhachhang);
             LoadPage();
+        } catch (error) {
+            console.error("Lỗi khi lưu khách hàng:", error);
+            toast.current.show({ severity: 'error', summary: 'Lỗi', detail: 'Không thể lưu khách hàng', life: 3000 });
         }
     };
 
@@ -187,35 +284,100 @@ const Khachhang = () => {
                 )} />
             </DataTable>
 
-            <Dialog visible={khachhangDialog} style={{ width: '450px' }} header="Thông tin khách hàng" footer={customerDialogFooter} onHide={hideDialog}>
-                <InputText value={khachhang.hoten} onChange={(e) => setKhachhang({ ...khachhang, hoten: e.target.value })} placeholder="Tên khách hàng" className="w-full" />
-                <InputText
-                    type="date"
-                    value={khachhang.ngaysinh ? formatDate(khachhang.ngaysinh) : ""}
-                    onChange={(e) =>
-                        setKhachhang({ ...khachhang, ngaysinh: e.target.value }) // Không cần parseDate
-                    }
-                    className="w-full mt-2"
-                />
-                <select
-                    value={khachhang.Gioitinh}
-                    onChange={(e) => setKhachhang({ ...khachhang, Gioitinh: e.target.value })}
-                    className="w-full pt-3 pb-3 mt-2 text-gray-700"
-                    style={{
-                        borderRadius: '8px',
-                        border: '1px solid #CCC',
-                        padding: '10px',
-                        fontSize: '13px',
-                    }}
+            <Dialog visible={khachhangDialog} style={{ width: '450px' }} header="Thông tin khách hàng" modal className="p-fluid" footer={customerDialogFooter} onHide={hideDialog}>
+                <div className="field">
+                    <label htmlFor="hoten">Họ tên</label>
+                    <InputText 
+                        id="hoten"
+                        value={khachhang.hoten} 
+                        onChange={(e) => {
+                            setKhachhang({ ...khachhang, hoten: e.target.value });
+                            setErrors({ ...errors, hoten: '' });
+                        }} 
+                        className={errors.hoten ? 'p-invalid' : ''}
+                        placeholder="Nhập họ tên"
+                    />
+                    {errors.hoten && <small className="p-error">{errors.hoten}</small>}
+                </div>
+
+                <div className="field">
+                    <label htmlFor="ngaysinh">Ngày sinh</label>
+                    <InputText
+                        id="ngaysinh"
+                        type="date"
+                        value={khachhang.ngaysinh ? formatDate(khachhang.ngaysinh) : ""}
+                        onChange={(e) => {
+                            setKhachhang({ ...khachhang, ngaysinh: e.target.value });
+                            setErrors({ ...errors, ngaysinh: '' });
+                        }}
+                        className={errors.ngaysinh ? 'p-invalid' : ''}
+                    />
+                    {errors.ngaysinh && <small className="p-error">{errors.ngaysinh}</small>}
+                </div>
+
+                <div className="field">
+                    <label htmlFor="Gioitinh">Giới tính</label>
+                    <select
+                        id="Gioitinh"
+                        value={khachhang.Gioitinh}
+                        onChange={(e) => {
+                            setKhachhang({ ...khachhang, Gioitinh: e.target.value });
+                            setErrors({ ...errors, Gioitinh: '' });
+                        }}
+                        className={`w-full p-2 border rounded ${errors.Gioitinh ? 'border-red-500' : ''}`}
                     >
-                    <option value="">Chọn giới tính</option>
-                    <option value="Nam">Nam</option>
-                    <option value="Nữ">Nữ</option>
-                    <option value="Khác">Khác</option>
-                </select>
-                <InputText value={khachhang.diachi} onChange={(e) => setKhachhang({ ...khachhang, diachi: e.target.value })} placeholder="Địa chỉ" className="w-full mt-2" />
-                <InputText value={khachhang.email} onChange={(e) => setKhachhang({ ...khachhang, email: e.target.value })} placeholder="Email" className="w-full mt-2" />
-                <InputText value={khachhang.SDT} onChange={(e) => setKhachhang({ ...khachhang, SDT: e.target.value })} placeholder="Số điện thoại" className="w-full mt-2" />
+                        <option value="">Chọn giới tính</option>
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                        <option value="Khác">Khác</option>
+                    </select>
+                    {errors.Gioitinh && <small className="p-error">{errors.Gioitinh}</small>}
+                </div>
+
+                <div className="field">
+                    <label htmlFor="diachi">Địa chỉ</label>
+                    <InputText 
+                        id="diachi"
+                        value={khachhang.diachi} 
+                        onChange={(e) => {
+                            setKhachhang({ ...khachhang, diachi: e.target.value });
+                            setErrors({ ...errors, diachi: '' });
+                        }} 
+                        className={errors.diachi ? 'p-invalid' : ''}
+                        placeholder="Nhập địa chỉ"
+                    />
+                    {errors.diachi && <small className="p-error">{errors.diachi}</small>}
+                </div>
+
+                <div className="field">
+                    <label htmlFor="email">Email</label>
+                    <InputText 
+                        id="email"
+                        value={khachhang.email} 
+                        onChange={(e) => {
+                            setKhachhang({ ...khachhang, email: e.target.value });
+                            setErrors({ ...errors, email: '' });
+                        }} 
+                        className={errors.email ? 'p-invalid' : ''}
+                        placeholder="Nhập email"
+                    />
+                    {errors.email && <small className="p-error">{errors.email}</small>}
+                </div>
+
+                <div className="field">
+                    <label htmlFor="SDT">Số điện thoại</label>
+                    <InputText 
+                        id="SDT"
+                        value={khachhang.SDT} 
+                        onChange={(e) => {
+                            setKhachhang({ ...khachhang, SDT: e.target.value });
+                            setErrors({ ...errors, SDT: '' });
+                        }} 
+                        className={errors.SDT ? 'p-invalid' : ''}
+                        placeholder="Nhập số điện thoại"
+                    />
+                    {errors.SDT && <small className="p-error">{errors.SDT}</small>}
+                </div>
             </Dialog>
 
             <Dialog visible={deleteKhachhangDialog} style={{ width: '450px' }} header="Xác nhận xóa" footer={deleteKhachhangFooter} onHide={() => setDeleteKhachhangDialog(false)}>

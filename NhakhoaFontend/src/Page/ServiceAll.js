@@ -114,7 +114,7 @@ function ServiceAll() {
                 alt="100% Bác sĩ tốt nghiệp Đại học Y Hà Nội"
                 style={{ width: '100%', height: 'auto' }}
               />
-              <p style={{backgroundColor: '#d3d3d3'}}>Cấy ghép Implant cùng Bác sĩ chuyên môn 100% tốt nghiệp Đại học Y Hà Nội</p>
+              <p>Cấy ghép Implant cùng Bác sĩ chuyên môn 100% tốt nghiệp Đại học Y Hà Nội</p>
             </div>
           </Col>
         </Row>

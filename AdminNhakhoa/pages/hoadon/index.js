@@ -40,6 +40,12 @@ const Hoadon = () => {
     const [bacsis, setBacsis] = useState([]);
     const toast = useRef(null);
     const dt = useRef(null);
+    const [errors, setErrors] = useState({
+        benhnhan_id: '',
+        bacsi_id: '',
+        ngaytao: '',
+        dichvu: ''
+    });
 
     useEffect(() => {
         let isMounted = true;
@@ -66,17 +72,75 @@ const Hoadon = () => {
         return () => { isMounted = false; };
     }, []);
 
+    const validateForm = () => {
+        let valid = true;
+        let newErrors = {
+            benhnhan_id: '',
+            bacsi_id: '',
+            ngaytao: '',
+            dichvu: ''
+        };
+
+        // Validate bệnh nhân
+        if (!hoadon.benhnhan_id) {
+            newErrors.benhnhan_id = 'Vui lòng chọn bệnh nhân';
+            valid = false;
+        }
+
+        // Validate bác sĩ
+        if (!hoadon.bacsi_id) {
+            newErrors.bacsi_id = 'Vui lòng chọn bác sĩ';
+            valid = false;
+        }
+
+        // Validate ngày tạo
+        if (!hoadon.ngaytao) {
+            newErrors.ngaytao = 'Vui lòng chọn ngày tạo';
+            valid = false;
+        } else {
+            const selectedDate = new Date(hoadon.ngaytao);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (selectedDate > today) {
+                newErrors.ngaytao = 'Ngày tạo không được lớn hơn ngày hiện tại';
+                valid = false;
+            }
+        }
+
+        // Validate chi tiết hóa đơn
+        if (chiTietHoaDon.length === 0) {
+            newErrors.dichvu = 'Vui lòng thêm ít nhất một dịch vụ';
+            valid = false;
+        }
+
+        setErrors(newErrors);
+        return valid;
+    };
+
     const openNew = () => {
         setHoadon(emptyHoadon);
         setChiTietHoaDon([]);
         setOriginalChiTiet([]);
         setSubmitted(false);
+        setErrors({
+            benhnhan_id: '',
+            bacsi_id: '',
+            ngaytao: '',
+            dichvu: ''
+        });
         setHoadonDialog(true);
     };
 
     const hideDialog = () => {
         setSubmitted(false);
         setHoadonDialog(false);
+        setErrors({
+            benhnhan_id: '',
+            bacsi_id: '',
+            ngaytao: '',
+            dichvu: ''
+        });
     };
 
     const hideViewDialog = () => {
@@ -112,14 +176,14 @@ const Hoadon = () => {
 
     const saveHoadon = async () => {
         setSubmitted(true);
-        if (!hoadon.benhnhan_id || !hoadon.bacsi_id || !hoadon.ngaytao) {
-          toast.current.show({
-            severity: 'warn',
-            summary: 'Cảnh báo',
-            detail: 'Vui lòng điền đầy đủ thông tin',
-            life: 3000,
-          });
-          return;
+        if (!validateForm()) {
+            toast.current.show({
+                severity: 'warn',
+                summary: 'Cảnh báo',
+                detail: 'Vui lòng kiểm tra lại thông tin nhập',
+                life: 3000
+            });
+            return;
         }
       
         try {
@@ -200,6 +264,12 @@ const Hoadon = () => {
           setHoadon(emptyHoadon);
           setChiTietHoaDon([]);
           setOriginalChiTiet([]);
+          setErrors({
+                benhnhan_id: '',
+                bacsi_id: '',
+                ngaytao: '',
+                dichvu: ''
+            });
         } catch (error) {
           console.error('Lỗi khi lưu hóa đơn:', error);
           toast.current.show({
@@ -369,9 +439,12 @@ const Hoadon = () => {
                         <div className="field">
                             <label>Bệnh Nhân</label>
                             <select
-                                className="w-full p-2 border rounded"
+                                className={`w-full p-2 border rounded ${errors.benhnhan_id ? 'border-red-500' : ''}`}
                                 value={hoadon.benhnhan_id}
-                                onChange={(e) => setHoadon({ ...hoadon, benhnhan_id: e.target.value })}
+                                onChange={(e) => {
+                                    setHoadon({ ...hoadon, benhnhan_id: e.target.value });
+                                    setErrors({ ...errors, benhnhan_id: '' });
+                                }}
                             >
                                 <option value="">-- Chọn bệnh nhân --</option>
                                 {benhnhans.map(bn => (
@@ -380,14 +453,19 @@ const Hoadon = () => {
                                     </option>
                                 ))}
                             </select>
-                            {submitted && !hoadon.benhnhan_id && <small className="p-error">Vui lòng chọn bệnh nhân</small>}
+                            {errors.benhnhan_id && (
+                                <small className="p-error block">{errors.benhnhan_id}</small>
+                            )}
                         </div>
                         <div className="field">
                             <label>Nha Sĩ</label>
                             <select
-                                className="w-full p-2 border rounded"
+                                className={`w-full p-2 border rounded ${errors.bacsi_id ? 'border-red-500' : ''}`}
                                 value={hoadon.bacsi_id}
-                                onChange={(e) => setHoadon({ ...hoadon, bacsi_id: e.target.value })}
+                                onChange={(e) => {
+                                    setHoadon({ ...hoadon, bacsi_id: e.target.value });
+                                    setErrors({ ...errors, bacsi_id: '' });
+                                }}
                             >
                                 <option value="">-- Chọn Nha sĩ --</option>
                                 {bacsis.map(bs => (
@@ -396,17 +474,25 @@ const Hoadon = () => {
                                     </option>
                                 ))}
                             </select>
-                            {submitted && !hoadon.bacsi_id && <small className="p-error">Vui lòng chọn bác sĩ</small>}
+                            {errors.bacsi_id && (
+                                <small className="p-error block">{errors.bacsi_id}</small>
+                            )}
                         </div>
                         <div className="field">
                             <label>Ngày Tạo</label>
                             <InputText
-                                type="date" readOnly
+                                type="date"
+                                readOnly
+                                className={`w-full ${errors.ngaytao ? 'p-invalid' : ''}`}
                                 value={hoadon.ngaytao ? formatDate(hoadon.ngaytao) : ""}
-                                onChange={(e) => setHoadon({ ...hoadon, ngaytao: e.target.value })}
-                                className="w-full mt-2"
+                                onChange={(e) => {
+                                    setHoadon({ ...hoadon, ngaytao: e.target.value });
+                                    setErrors({ ...errors, ngaytao: '' });
+                                }}
                             />
-                            {submitted && !hoadon.ngaytao && <small className="p-error">Vui lòng chọn ngày tạo</small>}
+                            {errors.ngaytao && (
+                                <small className="p-error block">{errors.ngaytao}</small>
+                            )}
                         </div>
                         <div className="field">
                             <label>Chọn Dịch Vụ</label>
@@ -422,6 +508,9 @@ const Hoadon = () => {
                                     </option>
                                 ))}
                             </select>
+                            {errors.dichvu && (
+                                <small className="p-error block">{errors.dichvu}</small>
+                            )}
                         </div>
 
                         {chiTietHoaDon.length > 0 && (
