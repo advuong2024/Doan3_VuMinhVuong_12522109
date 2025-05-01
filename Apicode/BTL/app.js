@@ -17,6 +17,8 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 // Đường dẫn tĩnh để truy cập file đã upload
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+var upload = require("./routes/upload.route");
+app.use('/image', upload); 
   
 // app.use((req, res, next) => {
 //   res.header('Access-Control-Allow-Origin', '*'); // Allow all origins
@@ -40,6 +42,8 @@ var hoadonRouter = require('./routes/hoadon.route');
 app.use('/hoadons', hoadonRouter);
 var thongkeRouter = require("./routes/thongke.route");
 app.use('/thongkes', thongkeRouter);
+var tintucRouter = require("./routes/tintuc.route");
+app.use('/tintucs', tintucRouter);
 
 // app.get('/benhnhans', async (req, res) => {
 //   const patients = await getPatients(); // Lấy dữ liệu từ database

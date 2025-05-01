@@ -1,0 +1,11 @@
+var express = require('express');
+var router = express.Router();
+const tintucController = require("../controllers/tintuc.controller");
+router.get('/newnk', tintucController.getNewNK);
+router.get('/newgdv', tintucController.getNewGDV);
+router.get('/', tintucController.getAll);
+router.get('/:id',  tintucController.getById);
+router.post('/',  tintucController.insert);
+router.put('/:id',  tintucController.update);
+router.delete('/:id', tintucController.delete);
+module.exports = router;

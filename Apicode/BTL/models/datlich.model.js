@@ -7,7 +7,6 @@ const Datlich = (datlich) => {
   this.bacsi_id = datlich.bacsi_id;
   this.dichvu_id = datlich.dichvu_id;
   this.Ngay_Kham = moment(datlich.Ngay_Kham).local().format('YYYY-MM-DD');
-
   this.Gio_Kham = datlich.Gio_Kham;
   this.Trang_Thai = datlich.Trang_Thai;
 };

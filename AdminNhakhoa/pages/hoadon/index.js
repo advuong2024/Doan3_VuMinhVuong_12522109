@@ -38,23 +38,26 @@ const Hoadon = () => {
     const [services, setServices] = useState([]);
     const [benhnhans, setBenhnhans] = useState([]);
     const [bacsis, setBacsis] = useState([]);
-    const toast = useRef(null);
-    const dt = useRef(null);
     const [errors, setErrors] = useState({
         benhnhan_id: '',
         bacsi_id: '',
         ngaytao: '',
         dichvu: ''
     });
+    const toast = useRef(null);
+    const dt = useRef(null);
 
+    // useEffect để tải dữ liệu ban đầu
     useEffect(() => {
         let isMounted = true;
+        // console.log('Fetching initial data...');
         Promise.all([
             EventService.getdichvu(),
             BacsiService.getbacsi(),
             KhachhangService.getKhachhang(),
             HoadonService.gethoadon(),
         ]).then(([dichvuData, bacsiData, benhnhanData, hoadonData]) => {
+            // console.log('Data fetched:', { dichvuData, bacsiData, benhnhanData, hoadonData });
             if (isMounted) {
                 setServices(dichvuData);
                 setBacsis(bacsiData);
@@ -72,6 +75,85 @@ const Hoadon = () => {
         return () => { isMounted = false; };
     }, []);
 
+    // useEffect riêng để xử lý query parameters và mở dialog
+    useEffect(() => {
+        // console.log('Checking query parameters...');
+        const params = new URLSearchParams(window.location.search);
+        const datlich_id = params.get('datlich_id');
+        const benhnhan_id = params.get('benhnhan_id');
+        const bacsi_id = params.get('bacsi_id');
+        const dichvu_id = params.get('dichvu_id');
+        const ngaytao = params.get('ngaytao');
+        const openDialog = params.get('openDialog');
+
+        // console.log('Query params:', {datlich_id, benhnhan_id, bacsi_id, dichvu_id, ngaytao, openDialog });
+
+        if (benhnhan_id && bacsi_id && dichvu_id && openDialog === 'true') {
+            // console.log('Valid query params, preparing to open dialog...');
+            setHoadon({
+                ...emptyHoadon,
+                benhnhan_id,
+                bacsi_id,
+                ngaytao: ngaytao || new Date().toISOString().split('T')[0],
+                datlich_id,
+            });
+
+            // Đợi services sẵn sàng trước khi thêm dịch vụ
+            if (services.length > 0) {
+                // console.log('Services available:', services);
+                const dichvu = services.find(dv => String(dv.dichvu_id) === String(dichvu_id));
+                if (dichvu) {
+                    console.log('Found dichvu:', dichvu);
+                    const chiTiet = {
+                        ma_chi_tiet: createIdCT(),
+                        dichvu_id: dichvu.dichvu_id,
+                        gia: dichvu.gia_event || 0,
+                    };
+                    setChiTietHoaDon([chiTiet]);
+                } else {
+                    console.warn('Dịch vụ không tìm thấy:', dichvu_id);
+                    toast.current.show({
+                        severity: 'warn',
+                        summary: 'Cảnh báo',
+                        detail: 'Dịch vụ không tồn tại',
+                        life: 3000
+                    });
+                }
+                setHoadonDialog(true);
+            } else {
+                // console.log('Services not yet loaded, waiting...');
+                // Nếu services chưa sẵn sàng, thêm vào queue để xử lý sau
+                const interval = setInterval(() => {
+                    if (services.length > 0) {
+                        // console.log('Services loaded in interval:', services);
+                        const dichvu = services.find(dv => String(dv.dichvu_id) === String(dichvu_id));
+                        if (dichvu) {
+                            const chiTiet = {
+                                ma_chi_tiet: createIdCT(),
+                                dichvu_id: dichvu.dichvu_id,
+                                gia: dichvu.gia_event || 0,
+                            };
+                            setChiTietHoaDon([chiTiet]);
+                            setHoadonDialog(true);
+                        } else {
+                            console.warn('Dịch vụ không tìm thấy:', dichvu_id);
+                            toast.current.show({
+                                severity: 'warn',
+                                summary: 'Cảnh báo',
+                                detail: 'Dịch vụ không tồn tại',
+                                life: 3000
+                            });
+                        }
+                        clearInterval(interval);
+                    }
+                }, 100);
+                return () => clearInterval(interval);
+            }
+        } else {
+            console.log('Không tìm thấy dữ liệu params hoặc openDialog không có dữ liệu');
+        }
+    }, [services]); // Phụ thuộc vào services để xử lý lại khi services được cập nhật
+
     const validateForm = () => {
         let valid = true;
         let newErrors = {
@@ -81,34 +163,21 @@ const Hoadon = () => {
             dichvu: ''
         };
 
-        // Validate bệnh nhân
         if (!hoadon.benhnhan_id) {
             newErrors.benhnhan_id = 'Vui lòng chọn bệnh nhân';
             valid = false;
         }
 
-        // Validate bác sĩ
         if (!hoadon.bacsi_id) {
             newErrors.bacsi_id = 'Vui lòng chọn bác sĩ';
             valid = false;
         }
 
-        // Validate ngày tạo
         if (!hoadon.ngaytao) {
             newErrors.ngaytao = 'Vui lòng chọn ngày tạo';
             valid = false;
-        } else {
-            const selectedDate = new Date(hoadon.ngaytao);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            if (selectedDate > today) {
-                newErrors.ngaytao = 'Ngày tạo không được lớn hơn ngày hiện tại';
-                valid = false;
-            }
         }
 
-        // Validate chi tiết hóa đơn
         if (chiTietHoaDon.length === 0) {
             newErrors.dichvu = 'Vui lòng thêm ít nhất một dịch vụ';
             valid = false;
@@ -135,12 +204,16 @@ const Hoadon = () => {
     const hideDialog = () => {
         setSubmitted(false);
         setHoadonDialog(false);
+        setHoadon(emptyHoadon);
+        setChiTietHoaDon([]);
         setErrors({
             benhnhan_id: '',
             bacsi_id: '',
             ngaytao: '',
             dichvu: ''
         });
+        // Xóa query parameters
+        window.history.replaceState(null, '', '/hoadon');
     };
 
     const hideViewDialog = () => {
@@ -149,7 +222,15 @@ const Hoadon = () => {
 
     const handleAddDichvu = (dichvu_id) => {
         const existing = chiTietHoaDon.find(dv => dv.dichvu_id === dichvu_id);
-        if (existing) return;
+        if (existing) {
+            toast.current.show({
+                severity: 'warn',
+                summary: 'Cảnh báo',
+                detail: 'Dịch vụ đã được thêm',
+                life: 3000
+            });
+            return;
+        }
 
         const dv = services.find(d => d.dichvu_id === dichvu_id);
         if (dv) {
@@ -185,99 +266,101 @@ const Hoadon = () => {
             });
             return;
         }
-      
-        try {
-          let _hoadon = { ...hoadon };
-          const isEditing = !!_hoadon.ma_hoa_don;
 
-          _hoadon.ngaytao = formatDate(_hoadon.ngaytao);
-      
-          if (!isEditing) {
-            // Tạo hóa đơn mới
-            const newId = createId();
-            if (typeof newId !== 'string') {
-              throw new Error('Mã hóa đơn tạo ra không hợp lệ');
-            }
-            _hoadon.ma_hoa_don = newId;
-            await HoadonService.posthoadon(_hoadon);
-      
-            if (chiTietHoaDon.length > 0) {
-              for (const chiTiet of chiTietHoaDon) {
-                if (!chiTiet.dichvu_id || !chiTiet.gia) {
-                  throw new Error('Chi tiết hóa đơn không hợp lệ');
+        try {
+            let _hoadon = { ...hoadon };
+            const isEditing = !!_hoadon.ma_hoa_don;
+            
+            _hoadon.ngaytao = formatDate(_hoadon.ngaytao);
+            
+            const {benhnhan_name, bacsi_name, datlich_id, ...hoadonData } = _hoadon;
+
+            if (!isEditing) {
+                const newId = createId();
+                if (typeof newId !== 'string') {
+                    throw new Error('Mã hóa đơn tạo ra không hợp lệ');
                 }
-                const chiTietData = {
-                  ma_chi_tiet: chiTiet.ma_chi_tiet || createId(),
-                  ma_hoa_don: _hoadon.ma_hoa_don,
-                  dichvu_id: chiTiet.dichvu_id,
-                  gia: chiTiet.gia,
-                };
-                await HoadonService.poschitietHD(chiTietData);
-              }
+                hoadonData.ma_hoa_don = newId;
+                await HoadonService.posthoadon(hoadonData);
+
+                if (chiTietHoaDon.length > 0) {
+                    for (const chiTiet of chiTietHoaDon) {
+                        if (!chiTiet.dichvu_id || !chiTiet.gia) {
+                            throw new Error('Chi tiết hóa đơn không hợp lệ');
+                        }
+                        const chiTietData = {
+                            ma_chi_tiet: chiTiet.ma_chi_tiet || createId(),
+                            ma_hoa_don: hoadonData.ma_hoa_don,
+                            dichvu_id: chiTiet.dichvu_id,
+                            gia: chiTiet.gia,
+                        };
+                        await HoadonService.poschitietHD(chiTietData);
+                    }
+                }
+                if(datlich_id){
+                    await HoadonService.updateTT(datlich_id);
+                }
+            } else {
+                if (!_hoadon.ma_hoa_don || typeof _hoadon.ma_hoa_don !== 'string') {
+                    throw new Error('Mã hóa đơn không hợp lệ khi cập nhật');
+                }
+                await HoadonService.puthoadon(hoadon.ma_hoa_don, hoadonData);
+
+                const deletedChiTiet = originalChiTiet.filter(
+                    (oc) => !chiTietHoaDon.some((nc) => nc.ma_chi_tiet === oc.ma_chi_tiet)
+                );
+                for (const ct of deletedChiTiet) {
+                    await HoadonService.deleteChitietHD(ct.ma_chi_tiet);
+                }
+
+                for (const chiTiet of chiTietHoaDon) {
+                    const chiTietData = {
+                        ma_chi_tiet: chiTiet.ma_chi_tiet || createId(),
+                        ma_hoa_don: _hoadon.ma_hoa_don,
+                        dichvu_id: chiTiet.dichvu_id,
+                        gia: chiTiet.gia,
+                    };
+                    const isNewChiTiet = !originalChiTiet.some((oc) => oc.ma_chi_tiet === chiTiet.ma_chi_tiet);
+                    if (isNewChiTiet) {
+                        await HoadonService.poschitietHD(chiTietData);
+                    }
+                }
             }
-          } else {
-            // Cập nhật hóa đơn
-            if (! _hoadon.ma_hoa_don || typeof _hoadon.ma_hoa_don !== 'string') {
-              throw new Error('Mã hóa đơn không hợp lệ khi cập nhật');
-            }
-            const { benhnhan_name, bacsi_name, ...hoadonData } = _hoadon;
-            await HoadonService.puthoadon(hoadon.ma_hoa_don,hoadonData);
-      
-            const deletedChiTiet = originalChiTiet.filter(
-              (oc) => !chiTietHoaDon.some((nc) => nc.ma_chi_tiet === oc.ma_chi_tiet)
+
+            const updatedHoadons = await HoadonService.gethoadon();
+            setHoadons(
+                updatedHoadons.map((hd) => ({
+                    ...hd,
+                    benhnhan_name: benhnhans.find((bn) => bn.benhnhan_id === hd.benhnhan_id)?.hoten || 'Không xác định',
+                    bacsi_name: bacsis.find((bs) => bs.bacsi_id === hd.bacsi_id)?.hoten || 'Không xác định',
+                }))
             );
-            for (const ct of deletedChiTiet) {
-              await HoadonService.deleteChitietHD(ct.ma_chi_tiet);
-            }
-      
-            for (const chiTiet of chiTietHoaDon) {
-              const chiTietData = {
-                ma_chi_tiet: chiTiet.ma_chi_tiet || createId(),
-                ma_hoa_don: _hoadon.ma_hoa_don,
-                dichvu_id: chiTiet.dichvu_id,
-                gia: chiTiet.gia,
-              };
-              const isNewChiTiet = !originalChiTiet.some((oc) => oc.ma_chi_tiet === chiTiet.ma_chi_tiet);
-              if (isNewChiTiet) {
-                await HoadonService.poschitietHD(chiTietData);
-              }
-            }
-          }
-      
-          const updatedHoadons = await HoadonService.gethoadon();
-          setHoadons(
-            updatedHoadons.map((hd) => ({
-              ...hd,
-              benhnhan_name:
-                benhnhans.find((bn) => bn.benhnhan_id === hd.benhnhan_id)?.hoten || 'Không xác định',
-              bacsi_name: bacsis.find((bs) => bs.bacsi_id === hd.bacsi_id)?.hoten || 'Không xác định',
-            }))
-          );
-      
-          toast.current.show({
-            severity: 'success',
-            summary: 'Thành công',
-            detail: isEditing ? 'Cập nhật hóa đơn thành công' : 'Lưu hóa đơn thành công',
-            life: 3000,
-          });
-          setHoadonDialog(false);
-          setHoadon(emptyHoadon);
-          setChiTietHoaDon([]);
-          setOriginalChiTiet([]);
-          setErrors({
+
+            toast.current.show({
+                severity: 'success',
+                summary: 'Thành công',
+                detail: isEditing ? 'Cập nhật hóa đơn thành công' : 'Lưu hóa đơn thành công',
+                life: 3000,
+            });
+            setHoadonDialog(false);
+            setHoadon(emptyHoadon);
+            setChiTietHoaDon([]);
+            setOriginalChiTiet([]);
+            setErrors({
                 benhnhan_id: '',
                 bacsi_id: '',
                 ngaytao: '',
                 dichvu: ''
             });
+            window.history.replaceState(null, '', '/hoadon');
         } catch (error) {
-          console.error('Lỗi khi lưu hóa đơn:', error);
-          toast.current.show({
-            severity: 'error',
-            summary: 'Lỗi',
-            detail: error.message || 'Không thể lưu hóa đơn',
-            life: 3000,
-          });
+            console.error('Lỗi khi lưu hóa đơn:', error);
+            toast.current.show({
+                severity: 'error',
+                summary: 'Lỗi',
+                detail: error.message || 'Không thể lưu hóa đơn',
+                life: 3000,
+            });
         }
     };
 
@@ -345,20 +428,21 @@ const Hoadon = () => {
         printWindow.print();
     };
 
-    const handlePrintHoadon = async (rowData) => {
-        try{
-            const result = await HoadonService.updateStatus(rowData.maHoaDon);
+    const handlePrintHoadon = async () => {
+        try {
+            const result = await HoadonService.updateStatus(hoadon.ma_hoa_don);
             if (result && !Array.isArray(result)) {
-                toast.current.show({severity: 'success', summary: 'Thành công', detail: 'Cập nhập trạng thái hóa đơn thành công', life: 3000});
+                toast.current.show({ severity: 'success', summary: 'Thành công', detail: 'Cập nhật trạng thái hóa đơn thành công', life: 3000 });
                 printHoadon();
-            } else{
-                throw new Error('phản hồi không hợp lệ từ API');
+                setHoadon(emptyHoadon);
+            } else {
+                throw new Error('Phản hồi không hợp lệ từ API');
             }
-        }catch (error) {
-            console.error('Lỗi khi cập nhập trạng thái hóa đơn:', error);
-            toast.current.show({severity: 'error', summary: 'Lỗi', detail: 'Không thể cập nhập trạng thái hóa đơn', life: 3000});
+        } catch (error) {
+            console.error('Lỗi khi cập nhật trạng thái hóa đơn:', error);
+            toast.current.show({ severity: 'error', summary: 'Lỗi', detail: 'Không thể cập nhật trạng thái hóa đơn', life: 3000 });
         }
-    }
+    };
 
     const editHoadon = async (rowData) => {
         setHoadon(rowData);
@@ -396,12 +480,12 @@ const Hoadon = () => {
             <div className="col-12">
                 <div className="card">
                     <Toast ref={toast} />
-                    <Toolbar
+                    {/* <Toolbar
                         className="mb-4"
                         left={() => (
                             <Button label="Thêm mới" icon="pi pi-plus" className="mr-2" onClick={openNew} />
                         )}
-                    />
+                    /> */}
 
                     <DataTable ref={dt} value={hoadons} paginator rows={5} globalFilter={globalFilter} header={header}>
                         <Column header="STT" body={(rowData, options) => options.rowIndex + 1} className="text-center" />
@@ -425,7 +509,7 @@ const Hoadon = () => {
                     <Dialog
                         visible={hoadonDialog}
                         style={{ width: '600px' }}
-                        header={"Thông tin hóa đơn"}
+                        header="Thông tin hóa đơn"
                         modal
                         className="p-fluid"
                         footer={(
@@ -482,7 +566,6 @@ const Hoadon = () => {
                             <label>Ngày Tạo</label>
                             <InputText
                                 type="date"
-                                readOnly
                                 className={`w-full ${errors.ngaytao ? 'p-invalid' : ''}`}
                                 value={hoadon.ngaytao ? formatDate(hoadon.ngaytao) : ""}
                                 onChange={(e) => {
@@ -518,7 +601,7 @@ const Hoadon = () => {
                                 <Column
                                     field="dichvu_id"
                                     header="Dịch Vụ"
-                                    body={(rowData) => services.find(dv => dv.dichvu_id === rowData.dichvu_id)?.ten_event}
+                                    body={(rowData) => services.find(dv => dv.dichvu_id === rowData.dichvu_id)?.ten_event || 'Không xác định'}
                                 />
                                 <Column
                                     field="gia"
@@ -547,7 +630,7 @@ const Hoadon = () => {
                         footer={(
                             <>
                                 <Button label="Đóng" icon="pi pi-times" onClick={hideViewDialog} />
-                                <Button label="In hóa đơn" icon="pi pi-print" onClick={() => handlePrintHoadon(rowData)} />
+                                <Button label="In hóa đơn" icon="pi pi-print" onClick={() => handlePrintHoadon()} />
                             </>
                         )}
                         onHide={hideViewDialog}
@@ -616,12 +699,12 @@ const Hoadon = () => {
                                             <tr style={{ backgroundColor: '#f5f5f5', color: '#333' }}>
                                                 <th style={{ padding: '1px', border: '1px solid #000', textAlign: 'center' }}>STT</th>
                                                 <th style={{ padding: '10px', border: '1px solid #000', textAlign: 'center' }}>Tên dịch vụ</th>
-                                                <th style={{ padding: '10px', border: '1px solid #000', textAlign: 'Center' }}>Giá</th>
+                                                <th style={{ padding: '10px', border: '1px solid #000', textAlign: 'center' }}>Giá</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {chiTietHoaDon.map((ct, index) => (
-                                                <tr key={ct.ma_chi_tiet} style={{ borderBottom: '1px solid #eee'}}>
+                                                <tr key={ct.ma_chi_tiet} style={{ borderBottom: '1px solid #eee' }}>
                                                     <td style={{ padding: '1px', border: '1px solid #000', textAlign: 'center' }}>
                                                         {index + 1}
                                                     </td>

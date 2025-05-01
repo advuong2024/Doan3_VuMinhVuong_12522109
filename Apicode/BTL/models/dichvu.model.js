@@ -31,7 +31,7 @@ Dichvu.insert = (dichvu, callBack) => {
       callBack(err);
       return;
     }
-    callBack(new {dichvu_id : res.insertId, ...dichvu });
+    callBack({dichvu_id : res.insertId, ...dichvu });
   });
 };
 Dichvu.update = (dichvu, dichvu_id, callBack) => {

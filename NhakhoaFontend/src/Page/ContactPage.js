@@ -11,6 +11,7 @@ function ContactPage() {
     const [selectedDate, setSelectedDate] = useState(today);
     const [selectedTime, setSelectedTime] = useState("");
     const [services, setServices] = useState("08:00");
+    const [bacsis, setbacsis] = useState({});
     const [errors, setErrors] = useState({});
     const [formData, setFormData] = useState({
         hoten: "",
@@ -20,6 +21,7 @@ function ContactPage() {
         email: "",
         SDT: "",
         dichvu_id: "",
+        bacsi_id: "",
     });
 
     // Hàm validate form
@@ -40,7 +42,7 @@ function ContactPage() {
         } else {
             const dob = new Date(formData.ngaysinh);
             const today = new Date();
-            const age = today.getFullYear() - dob.getFullYear();
+            let age = today.getFullYear() - dob.getFullYear();
             const m = today.getMonth() - dob.getMonth();
             
             if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
@@ -80,6 +82,11 @@ function ContactPage() {
         // Validate dịch vụ
         if (!formData.dichvu_id) {
             formErrors.dichvu_id = 'Vui lòng chọn dịch vụ.';
+            isValid = false;
+        }
+
+        if (!formData.bacsi_id) {
+            formErrors.bacsi_id = 'Vui lòng chọn nha sĩ.';
             isValid = false;
         }
 
@@ -145,6 +152,7 @@ function ContactPage() {
             const datlichData ={
                 datlich_id: createDatlichId(),
                 benhnhan_id: benhnhanid,
+                bacsi_id: formData.bacsi_id,
                 dichvu_id: formData.dichvu_id,
                 Ngay_Kham: formatDate(selectedDate),
                 Gio_Kham: selectedTime,
@@ -165,6 +173,7 @@ function ContactPage() {
                 email: "",
                 SDT: "",
                 dichvu_id: "",
+                bacsi_id: "",
             });
             setSelectedDate(today);
             setSelectedTime("");
@@ -178,9 +187,13 @@ function ContactPage() {
 
     useEffect(() => {
         let isMounted = true;
-        ContactService.getdichvu().then(data => {
-            if (isMounted) {
-                setServices(data);
+        Promise.all([
+            ContactService.getdichvu(),
+            ContactService.getBacsi(),
+        ]).then (([dichvuData, bacsiData]) => {
+            if(isMounted){
+                setServices(dichvuData);
+                setbacsis(bacsiData);
             }
         });
         return () => { isMounted = false; };
@@ -294,6 +307,29 @@ function ContactPage() {
                                     </Form.Control.Feedback>
                                 </Col>
                             </Row>
+
+                            <Form.Group className="mb-3">
+                                <Form.Label><strong>Chọn nha sĩ</strong></Form.Label>
+                                <Form.Select 
+                                    value={formData.bacsi_id}
+                                    onChange={(e) => setFormData({ ...formData, bacsi_id: e.target.value })}
+                                    isInvalid={!!errors.bacsi_id}
+                                >
+                                    <option value="">- Vui lòng chọn nha sĩ -</option>
+                                    {Array.isArray(bacsis) && bacsis.length > 0 ? (
+                                        bacsis.map(bacsi => (
+                                            <option key={bacsi.bacsi_id} value={bacsi.bacsi_id}>
+                                                {bacsi.hoten}
+                                            </option>
+                                        ))
+                                    ) : (
+                                        <option value="">Không có nha sĩ nào</option>
+                                    )}
+                                </Form.Select>
+                                <Form.Control.Feedback type="invalid">
+                                    {errors.bacsi_id}
+                                </Form.Control.Feedback>
+                            </Form.Group>
 
                             <Form.Group className="mb-3">
                                 <Form.Label><strong>Chọn dịch vụ</strong></Form.Label>

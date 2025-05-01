@@ -44,7 +44,7 @@ const RevenueDashboard = () => {
 
             // Lấy số lượng khách hàng
             const hoadonData = await ThongkeService.gethoadonCount();
-            setCustomerCount(hoadonData?.length || 0);
+            setCustomerCount(hoadonData?.hoadonCount || 0);
 
             // Lấy số lượng đặt lịch
             const bookingData = await ThongkeService.getBooking();
@@ -54,9 +54,6 @@ const RevenueDashboard = () => {
             const revenueData = await ThongkeService.getRevenue();
             const total = revenueData && typeof revenueData === 'object' && 'revenue' in revenueData ? revenueData.revenue : 0;
             setTotalRevenue(total);
-
-            const ChartMonth = await ThongkeService.getchartMonth();
-            setChartData(ChartMonth);
         } catch (error) {
             console.error('Lỗi khi lấy dữ liệu thống kê:', error);
             setCustomerCount(0);
@@ -232,6 +229,7 @@ const RevenueDashboard = () => {
     // Lấy dữ liệu cho thẻ thống kê khi component mount
     useEffect(() => {
         fetchStatsData();
+        fetchChartData('thang','','');
     }, []);
 
     if (loading) return <div>Đang tải...</div>;

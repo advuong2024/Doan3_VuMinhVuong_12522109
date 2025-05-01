@@ -63,6 +63,29 @@ export const HoadonService = {
             return [];
         });
     },
+    updateTT(id){
+        return fetch(`http://localhost:3000/datlichs/trangthai/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'},
+        })
+        .then(async(res) => {
+            if (!res.ok) {
+                throw new Error(`Lỗi: ${res.status} ${res.statusText}`);
+            }
+            const text = await res.text(); 
+            try {
+                return JSON.parse(text); // Chuyển về JSON nếu có thể
+            } catch (error) {
+                console.warn("Phản hồi không phải JSON:", text);
+                return text; // Nếu không phải JSON, trả về nội dung gốc
+            }
+        })
+        .then((data) => data || []) // Trả về mảng rỗng nếu không có dữ liệu
+        .catch((error) => {
+            console.error("Lỗi khi cập nhập trạng thái đặt lịch:", error);
+            return [];
+        });
+    },
     getchitietHD(){
         return fetch('http://localhost:3000/chitiethoadons', {
             method: 'GET',

@@ -182,7 +182,7 @@ const customers = [
 function HomePage() {
   const navigate = useNavigate();
   return (
-    <div classname='w-100'>
+    <div className='w-100'>
       <div className="container mt-3 mb-3">
         <div className="row">
           {features.map((feature, index) => (

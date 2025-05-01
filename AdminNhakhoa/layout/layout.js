@@ -9,7 +9,7 @@ import AppTopbar from './AppTopbar';
 import AppConfig from './AppConfig';
 import { LayoutContext } from './context/layoutcontext';
 import PrimeReact from 'primereact/api';
-// import UseAuth from "./authUser";
+import UseAuth from "./authUser";
 
 
 const Layout = (props) => {

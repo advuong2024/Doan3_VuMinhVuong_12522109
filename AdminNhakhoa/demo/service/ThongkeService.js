@@ -73,22 +73,6 @@ export const ThongkeService = {
             return [];
         })
     },
-    getchartMonth(){
-        return fetch(`http://localhost:3000/thongkes/chart?filterType=thang`, {
-            method: 'GET',
-            headers: { 'Content-Type' : 'application/json', 'Cache-Control' : 'no-cache' }
-        })
-        .then((res) => {
-            if(!res.ok){
-                throw new Error(`Lỗi: ${res.status} ${res.statusText}`);
-            }
-        })
-        .then((data) => data || [])
-        .catch((error) => {
-            console.error("Lỗi khi lấy dữ liệu:", error);
-            return [];
-        })
-    },
 };
 
 export default ThongkeService;

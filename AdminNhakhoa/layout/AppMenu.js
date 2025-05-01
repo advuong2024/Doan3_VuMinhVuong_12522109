@@ -11,7 +11,8 @@ const AppMenu = () => {
 
     const handleLogout = () => {
         if (typeof window !== "undefined") {
-            localStorage.removeItem('token'); // Xóa token
+            localStorage.removeItem('token');
+            localStorage.removeItem('quyen') // Xóa token
             alert("Bạn đã đăng xuất thành công!"); // Hiển thị thông báo
             router.push('/auth/login'); // Điều hướng về trang đăng nhập
         }
@@ -51,18 +52,18 @@ const AppMenu = () => {
                 { label: 'Đặt lịch', icon: 'pi pi-fw pi-calendar', to: '/datlich'},
                 { label: 'Nha sĩ', icon: 'pi pi-fw pi-user',  to: '/bacsi'},
                 { label: 'Hóa đơn', icon: 'pi pi-fw pi-money-bill', to: '/hoadon'},
-                // { label: 'Bài đăng', icon: 'pi pi-fw pi-megaphone', items: [
-                //     {
-                //         label: 'Tất cả bài đăng',
-                //         icon: 'pi pi-fw pi-table',
-                //         to: ' /tintuc'
-                //     },
-                //     {
-                //         label: 'Thêm bài đăng mới',
-                //         icon: 'pi pi-fw pi-plus',
-                //         to: ' /tintuc/addnew'
-                //     }
-                // ]},   
+                { label: 'Bài đăng', icon: 'pi pi-fw pi-megaphone', items: [
+                    {
+                        label: 'Tất cả bài đăng',
+                        icon: 'pi pi-fw pi-table',
+                        to: ' /tintuc'
+                    },
+                    {
+                        label: 'Thêm bài đăng mới',
+                        icon: 'pi pi-fw pi-plus',
+                        to: ' /tintuc/addnew'
+                    }
+                ]},   
             ]
         },
         // {

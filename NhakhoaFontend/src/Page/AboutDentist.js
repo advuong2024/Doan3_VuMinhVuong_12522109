@@ -40,7 +40,7 @@ const certificates = [
 function AboutDentist() {
     const navigate = useNavigate();
     return (
-    <div classname='w-100'>
+    <div className='w-100'>
       <Container fluid className="p-0">
         <div className='bg-success py-2 text-start ps-3'>
             <Button variant="light" className="border-0 rounded-circle shadow"

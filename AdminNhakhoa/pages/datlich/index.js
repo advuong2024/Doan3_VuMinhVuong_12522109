@@ -9,9 +9,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { DatlichService } from '../../demo/service/DatlichService';
 import { KhachhangService } from '../../demo/service/KhachhangService';
 import { EventService } from '../../demo/service/EventService';
+import { BacsiService } from '../../demo/service/BacsiService';
 
 const Datlich = () => {
-    let emptydatlich = { datlich_id: "", benhnhan_id: "", dichvu_id: "", Ngay_Kham: "", Gio_Kham: "", Trang_Thai: ""};
+    let emptydatlich = { datlich_id: "", benhnhan_id: "", bacsi_id: "", dichvu_id: "", Ngay_Kham: "", Gio_Kham: "", Trang_Thai: ""};
 
     const [datlichs, setDatlichs] = useState([]);
     const [datlich, setDatlich] = useState(emptydatlich);
@@ -34,9 +35,38 @@ const Datlich = () => {
         return benhnhan ? benhnhan.hoten : "Không xác định";  // Nếu không tìm thấy, trả về "Không xác định"
     };
 
+    const getBacsiName = (bacsi_id, bacsiData) => {
+        if (!bacsi_id || !bacsiData || !Array.isArray(bacsiData)) {
+            console.warn('Invalid bacsi_id or bacsiData:', { bacsi_id, bacsiData });
+            return "Không xác định";
+        }
+        const cleanedBacsiId = String(bacsi_id).trim(); // Loại bỏ khoảng trắng
+        const bacsi = bacsiData.find(bs => {
+            const cleanedBsId = String(bs.bacsi_id).trim();
+            const isMatch = cleanedBsId === cleanedBacsiId;
+            return isMatch;
+        });
+        if (!bacsi) {
+            console.warn('No matching bacsi found for bacsi_id:', cleanedBacsiId, 'in bacsiData:', bacsiData);
+        }
+        return bacsi ? bacsi.hoten : "Không xác định";
+    };
+    
     const getDichvuName = (dichvu_id, dichvuData) => {
-        const dichvu = dichvuData.find(dv => String(dv.dichvu_id) === String(dichvu_id));
-        return dichvu ? dichvu.ten_event : "Không xác định";  // Nếu không tìm thấy, trả về "Không xác định"
+        if (!dichvu_id || !dichvuData || !Array.isArray(dichvuData)) {
+            console.warn('Invalid dichvu_id or dichvuData:', { dichvu_id, dichvuData });
+            return "Không xác định";
+        }
+        const cleanedDichvuId = String(dichvu_id); // Loại bỏ khoảng trắng
+        const dichvu = dichvuData.find(dv => {
+            const cleanedDvId = String(dv.dichvu_id).trim();
+            const isMatch = cleanedDvId === cleanedDichvuId;
+            return isMatch;
+        });
+        if (!dichvu) {
+            console.warn('No matching dichvu found for dichvu_id:', cleanedDichvuId, 'in dichvuData:', dichvuData);
+        }
+        return dichvu ? dichvu.ten_event : "Không xác định";
     };
 
     useEffect(() => {
@@ -74,19 +104,22 @@ const Datlich = () => {
             }
     
             // Lấy dữ liệu bệnh nhân và dịch vụ
-            const [benhnhanData, dichvuData] = await Promise.all([
+            const [benhnhanData, bacsiData, dichvuData] = await Promise.all([
                 KhachhangService.getKhachhang(),
+                BacsiService.getbacsi(),
                 EventService.getdichvu(),
             ]);
-    
+
             // Ánh xạ benhnhan_id và dichvu_id thành tên
             const mergedData = data.map(item => {
                 const benhnhan_name = getBenhnhanName(item.benhnhan_id, benhnhanData);  // Tìm tên bệnh nhân
+                const bacsi_name = getBacsiName(item.bacsi_id, bacsiData);
                 const dichvu_name = getDichvuName(item.dichvu_id, dichvuData);  // Tìm tên dịch vụ
     
                 return {
                     ...item,
                     benhnhan_name,  // Tên bệnh nhân
+                    bacsi_name,
                     dichvu_name,  // Tên dịch vụ
                 };
             });    
@@ -100,9 +133,10 @@ const Datlich = () => {
     const fetchDatlichDetails = async () => {
         try {
             // Gọi các API song song
-            const [datlichData, benhnhanData, dichvuData] = await Promise.all([
+            const [datlichData, benhnhanData, bacsiData, dichvuData] = await Promise.all([
                 DatlichService.getDatlich(),
                 KhachhangService.getKhachhang(),
+                BacsiService.getbacsi(),
                 EventService.getdichvu(),
             ]);
     
@@ -110,15 +144,17 @@ const Datlich = () => {
                 console.warn("⚠️ Thông báo:", datlichData);
                 return [];
             }
-    
+            
             // Hợp nhất dữ liệu
             const mergedData = datlichData.map(item => {
                 const benhnhan_name = getBenhnhanName(item.benhnhan_id, benhnhanData);  // Tìm tên bệnh nhân
+                const bacsi_name = getBacsiName(item.bacsi_id, bacsiData);
                 const dichvu_name = getDichvuName(item.dichvu_id, dichvuData);  // Tìm tên dịch vụ
     
                 return {
                     ...item,
                     benhnhan_name,  // Tên bệnh nhân
+                    bacsi_name,
                     dichvu_name,  // Tên dịch vụ
                 };
             });
@@ -167,7 +203,7 @@ const Datlich = () => {
             _datlich.Ngay_Kham = formatDate(_datlich.Ngay_Kham);
 
             try {
-                const { benhnhan_name, dichvu_name, ...datlichData } = _datlich;
+                const { benhnhan_name, bacsi_name, dichvu_name, ...datlichData } = _datlich;
                 const updatedDatlich = await DatlichService.putdatlich(datlich.datlich_id, datlichData);
                 let _datlichs = datlichs.map(dl => 
                     dl.datlich_id === datlich.datlich_id ? updatedDatlich : dl
@@ -261,14 +297,55 @@ const Datlich = () => {
         setDatlich({ ...datlich, Gio_Kham: time });
         setShowDropdown(false);
     };
+
     const actionBodyTemplate = (rowData) => {
+        // console.log('Trang_Thai:', rowData.Trang_Thai);
         return (
-            <div>
-                {rowData.Trang_Thai === 'Hủy'? (
-                    <Button icon="pi pi-trash" className="ml-2" onClick={() => confirmDeleteDatlich(rowData)} />
-                ) : (
-                    <Button icon="pi pi-pencil" onClick={() => { setDatlich(rowData); setDatlichDialog(true); }} />
-                )}
+            <div className="flex gap-2">
+                {(() => {
+                    switch (rowData.Trang_Thai) {
+                        case 'Hủy':
+                            return (
+                                <Button
+                                    icon="pi pi-trash"
+                                    onClick={() => confirmDeleteDatlich(rowData)}
+                                />
+                            );
+                        case 'Đã xác nhận':
+                            return (
+                                <>
+                                    <Button
+                                        icon="pi pi-plus"
+                                        tooltip="Thêm hóa đơn"
+                                        onClick={() => {
+                                            const query = new URLSearchParams({
+                                                datlich_id: rowData.datlich_id,
+                                                benhnhan_id: rowData.benhnhan_id,
+                                                bacsi_id: rowData.bacsi_id,
+                                                dichvu_id: rowData.dichvu_id,
+                                                ngaytao: rowData.Ngay_Kham,
+                                                openDialog: 'true'
+                                            }).toString();
+                                            window.location.href = `/hoadon?${query}`;
+                                        }}
+                                    />
+                                    <Button
+                                        icon="pi pi-pencil"
+                                        onClick={() => { setDatlich(rowData); setDatlichDialog(true); }}
+                                    />
+                                </>
+                            );
+                        case 'Hoàn thành':
+                            return("");
+                        default:
+                            return (
+                                <Button
+                                    icon="pi pi-pencil"
+                                    onClick={() => { setDatlich(rowData); setDatlichDialog(true); }}
+                                />
+                            );
+                    }
+                })()}
             </div>
         );
     };
@@ -296,6 +373,7 @@ const Datlich = () => {
             <DataTable value={datlichs} paginator rows={5} globalFilter={globalFilter} header={header} emptyMessage="Không có lịch đặt hôm nay.">
                 <Column header="STT" body={(rowData, options) => options.rowIndex + 1} className='text-center'/>
                 <Column field="benhnhan_name" header="Bệnh nhân" />
+                <Column field="bacsi_name" header="Nha sĩ" />
                 <Column field="dichvu_name" header="Dịch vụ" />
                 <Column field="Ngay_Kham" header="Ngày khám" sortable body={(rowData) => formatDate(rowData.Ngay_Kham)} />
                 <Column field="Gio_Kham" header="Giờ khám" sortable />
@@ -305,6 +383,7 @@ const Datlich = () => {
 
             <Dialog visible={datlichDialog} style={{ width: '450px' }} header="Thông tin đặt lịch" footer={customerDialogFooter} onHide={hideDialog}>
                 <InputText value={datlich.benhnhan_id} readOnly onChange={(e) => setDatlich({ ...datlich, datlich_id: e.target.value })} placeholder="Bệnh nhân ID" className="w-full" />
+                <InputText value={datlich.bacsi_id} readOnly onChange={(e) => setDatlich({ ...datlich, datlich_id: e.target.value })} placeholder="Bác sĩ ID" className="w-full" />
                 <InputText value={datlich.dichvu_id} readOnly onChange={(e) => setDatlich({ ...datlich, dichvu_id: e.target.value })} placeholder="Dịch vụ ID" className="w-full mt-2" />
                 <InputText
                     type="date"

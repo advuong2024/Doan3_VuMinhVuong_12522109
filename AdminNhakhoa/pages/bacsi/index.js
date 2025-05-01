@@ -18,6 +18,7 @@ const Nhasi = () => {
     const [selectedBacsis, setSelectedBacsis] = useState(null);
     const [submitted, setSubmitted] = useState(false);
     const [globalFilter, setGlobalFilter] = useState("");
+    const [quyen, setQuyen] = useState(null); // State để lưu quyen từ localStorage
     const toast = useRef(null);
     const [errors, setErrors] = useState({
         hoten: '',
@@ -31,14 +32,25 @@ const Nhasi = () => {
         quyen: ''
     });
 
+    // Lấy quyen từ localStorage và lấy danh sách bác sĩ
     useEffect(() => {
         let isMounted = true;
+
+        // Lấy quyen từ localStorage
+        if (typeof window !== "undefined") {
+            const storedQuyen = localStorage.getItem('quyen');
+            if (storedQuyen) {
+                setQuyen(storedQuyen);
+            }
+        }
+
+        // Lấy danh sách bác sĩ
         BacsiService.getbacsi().then(data => {
             if (isMounted) {
                 setBacsis(data);
             }
         });
-        
+
         return () => { isMounted = false; };
     }, []);
 
@@ -65,7 +77,6 @@ const Nhasi = () => {
             quyen: ''
         };
 
-        // Validate họ tên
         if (!bacsi.hoten.trim()) {
             newErrors.hoten = 'Họ tên không được để trống';
             valid = false;
@@ -74,7 +85,6 @@ const Nhasi = () => {
             valid = false;
         }
 
-        // Validate ngày sinh
         if (!bacsi.ngaysinh) {
             newErrors.ngaysinh = 'Ngày sinh không được để trống';
             valid = false;
@@ -94,19 +104,16 @@ const Nhasi = () => {
             }
         }
 
-        // Validate giới tính
         if (!bacsi.Gioitinh) {
             newErrors.Gioitinh = 'Vui lòng chọn giới tính';
             valid = false;
         }
 
-        // Validate địa chỉ
         if (!bacsi.diachi.trim()) {
             newErrors.diachi = 'Địa chỉ không được để trống';
             valid = false;
         }
 
-        // Validate email
         if (!bacsi.email.trim()) {
             newErrors.email = 'Email không được để trống';
             valid = false;
@@ -115,7 +122,6 @@ const Nhasi = () => {
             valid = false;
         }
 
-        // Validate số điện thoại
         if (!bacsi.SDT.trim()) {
             newErrors.SDT = 'Số điện thoại không được để trống';
             valid = false;
@@ -124,7 +130,6 @@ const Nhasi = () => {
             valid = false;
         }
 
-        // Validate tài khoản
         if (!bacsi.taikhoan.trim()) {
             newErrors.taikhoan = 'Tài khoản không được để trống';
             valid = false;
@@ -133,7 +138,6 @@ const Nhasi = () => {
             valid = false;
         }
 
-        // Validate mật khẩu
         if (!bacsi.matkhau.trim()) {
             newErrors.matkhau = 'Mật khẩu không được để trống';
             valid = false;
@@ -142,7 +146,6 @@ const Nhasi = () => {
             valid = false;
         }
 
-        // Validate quyền
         if (!bacsi.quyen) {
             newErrors.quyen = 'Vui lòng chọn quyền';
             valid = false;
@@ -167,6 +170,11 @@ const Nhasi = () => {
             quyen: ''
         });
         setBacsiDialog(true);
+    };
+
+    const LoadPage = async () => {
+        const data = await BacsiService.getbacsi();
+        setBacsis(data);
     };
 
     const hideDialog = () => {
@@ -232,14 +240,11 @@ const Nhasi = () => {
 
     const deleteBacsi = async () => {
         try {
-            // Gọi API xóa bác sĩ
             const response = await BacsiService.deletebacsi(bacsi.bacsi_id);
     
             if (response) {
-                // Xóa bác sĩ khỏi danh sách hiện tại
                 let _bacsis = bacsis.filter(bs => bs.bacsi_id !== bacsi.bacsi_id);
                 setBacsis(_bacsis);
-    
                 toast.current.show({
                     severity: "success",
                     summary: "Thành công",
@@ -258,7 +263,6 @@ const Nhasi = () => {
                 life: 3000
             });
         } finally {
-            // Đóng dialog và reset trạng thái
             setDeleteBacsiDialog(false);
             setBacsi(emptyBacsi);
         }
@@ -281,24 +285,55 @@ const Nhasi = () => {
             <Button label="Có" icon="pi pi-check" onClick={deleteBacsi} />
         </>
     );
+
     const header = (
-            <div className="flex flex-column md:flex-row md:justify-content-between md:align-items-center">
-                <h4 className="m-0">Nha sĩ</h4>
-                <span className="block mt-2 md:mt-0 p-input-icon-left">
-                    <i className="pi pi-search" />
-                    <InputText type="search" onChange={(e) => setGlobalFilter(e.target.value)} placeholder="Search..." />
-                </span>
-            </div>
+        <div className="flex flex-column md:flex-row md:justify-content-between md:align-items-center">
+            <h4 className="m-0">Nha sĩ</h4>
+            <span className="block mt-2 md:mt-0 p-input-icon-left">
+                <i className="pi pi-search" />
+                <InputText type="search" onChange={(e) => setGlobalFilter(e.target.value)} placeholder="Search..." />
+            </span>
+        </div>
     );
+
+    // Cột hành động (Sửa, Xóa)
+    const actionBodyTemplate = (rowData) => {
+        return (
+            <div>
+                <Button
+                    icon="pi pi-pencil"
+                    onClick={() => { setBacsi(rowData); setBacsiDialog(true); }}
+                    disabled={quyen === 'User'} // Vô hiệu hóa nếu là User
+                />
+                <Button
+                    icon="pi pi-trash"
+                    className="ml-2"
+                    onClick={() => confirmDeleteBacsi(rowData)}
+                    disabled={quyen === 'User'} // Vô hiệu hóa nếu là User
+                />
+            </div>
+        );
+    };
 
     return (
         <div className="card">
             <Toast ref={toast} />
-            <Toolbar className="mb-4" left={() => (
-                <Button label="Thêm mới" icon="pi pi-plus" onClick={openNew} />
-            )} />
+            <Toolbar
+                className="mb-4"
+                left={() => (
+                    quyen !== 'User' && ( // Ẩn nút Thêm nếu là User
+                        <Button label="Thêm mới" icon="pi pi-plus" onClick={openNew} />
+                    )
+                )}
+            />
 
-            <DataTable value={bacsis} paginator rows={5} globalFilter={globalFilter} header={header}> 
+            <DataTable
+                value={bacsis}
+                paginator
+                rows={5}
+                globalFilter={globalFilter}
+                header={header}
+            > 
                 <Column header="STT" body={(rowData, options) => options.rowIndex + 1} className='text-center'/> 
                 <Column field="hoten" header="Họ Tên"></Column>
                 <Column field="ngaysinh" header="Ngày sinh" sortable body={(rowData) => formatDate(rowData.ngaysinh)}></Column>
@@ -306,18 +341,21 @@ const Nhasi = () => {
                 <Column field="diachi" header="Địa chỉ"></Column>
                 <Column field="email" header="Email"></Column>
                 <Column field="SDT" header="SĐT" className='text-center'></Column>
-                {/* <Column field="taikhoan" header="Tài khoản"></Column> */}
-                {/* <Column field="matkhau" header="Mật khẩu" sortable></Column> */}
                 <Column field="quyen" header="Quyền"></Column>
-                <Column body={(rowData) => (
-                    <>
-                        <Button icon="pi pi-pencil" onClick={() => {setBacsi(rowData); setBacsiDialog(true);}} />
-                        <Button icon="pi pi-trash" className="ml-2" onClick={() => confirmDeleteBacsi(rowData)} />
-                    </>
-                )} />
+                {quyen !== 'User' && ( // Ẩn cột Hành động nếu là User
+                    <Column body={actionBodyTemplate} header="Hành động" />
+                )}
             </DataTable>
 
-            <Dialog visible={bacsiDialog} style={{ width: '450px' }} header="Thông tin bác sĩ"  modal className="p-fluid" footer={bacsiDialogFooter} onHide={hideDialog}>
+            <Dialog
+                visible={bacsiDialog}
+                style={{ width: '450px' }}
+                header="Thông tin bác sĩ"
+                modal
+                className="p-fluid"
+                footer={bacsiDialogFooter}
+                onHide={hideDialog}
+            >
                 <div className="field">
                     <label htmlFor="hoten">Họ tên</label>
                     <InputText 
@@ -431,7 +469,6 @@ const Nhasi = () => {
                     <label htmlFor="matkhau">Mật khẩu</label>
                     <InputText 
                         id="matkhau"
-                        type="password"
                         value={bacsi.matkhau} 
                         onChange={(e) => {
                             setBacsi({ ...bacsi, matkhau: e.target.value });
@@ -461,8 +498,15 @@ const Nhasi = () => {
                     {errors.quyen && <small className="p-error">{errors.quyen}</small>}
                 </div>
             </Dialog>
-            <Dialog visible={deleteBacsiDialog} style={{ width: '450px' }} header="Xác nhận xóa" footer={deleteBacsiFooter} onHide={() => setDeleteBacsiDialog(false)}>
-                <p>Bạn có chắc chắn muốn xóa khách hàng <strong>{bacsi.hoten}</strong> không?</p>
+
+            <Dialog
+                visible={deleteBacsiDialog}
+                style={{ width: '450px' }}
+                header="Xác nhận xóa"
+                footer={deleteBacsiFooter}
+                onHide={() => setDeleteBacsiDialog(false)}
+            >
+                <p>Bạn có chắc chắn muốn xóa bác sĩ <strong>{bacsi.hoten}</strong> không?</p>
             </Dialog>
         </div>
     );

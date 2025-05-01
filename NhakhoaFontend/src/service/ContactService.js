@@ -22,6 +22,29 @@ export const ContactService = {
             return null;
         });
     },
+    getBacsi(){
+        return fetch('http://localhost:3000/bacsis',{
+            method: "GET",
+            headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache'
+            }
+        })
+        .then((res) => {
+            if(!res.ok) {
+                throw new Error(`Lỗi: ${res.status} ${res.statusText}`);
+            }
+            return res.json();
+        })
+        .then((data) => {
+            console.log("");
+            return data;
+        })
+        .catch ((error) => {
+            console.log("Lỗi khi lấy thông tin dữ liệu:", error);
+            return null;
+        })
+    },
     postdatlich(datlich) {
         return fetch('http://localhost:3000/datlichs', {
             method: 'POST',

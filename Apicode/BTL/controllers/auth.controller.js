@@ -21,7 +21,7 @@ exports.login = async (req, res) => {
             }
 
             // Tạo token
-            const token = jwt.sign({ id_bacsi: bacsi.id_bacsi, taikhoan: bacsi.taikhoan }, SECRET_KEY, { expiresIn: "10h" });
+            const token = jwt.sign({ id_bacsi: bacsi.id_bacsi, taikhoan: bacsi.taikhoan }, SECRET_KEY, { expiresIn: "2h" });
 
             res.json({
                 message: "Đăng nhập thành công!",
@@ -30,7 +30,7 @@ exports.login = async (req, res) => {
                     id_bacsi: bacsi.id_bacsi,
                     taikhoan: bacsi.taikhoan,
                     hoten: bacsi.hoten,
-                    email: bacsi.email
+                    quyen: bacsi.quyen
                 }
             });
         });

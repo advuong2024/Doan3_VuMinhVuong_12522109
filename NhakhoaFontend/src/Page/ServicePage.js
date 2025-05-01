@@ -69,7 +69,7 @@ function ServicePage() {
           {/* Phần văn bản */}
           <Col className="col-12 col-md-6 text-start text-success">
             <p>
-              Bên cạnh việc chú trọng năng cao tay nghề của đội ngũ bác sĩ, Nha khoa Alisa
+              Bên cạnh việc chú trọng nâng cao tay nghề của đội ngũ bác sĩ, Nha khoa Alisa
               luôn dành sự quan tâm đặc biệt đến việc cải tiến và nâng cấp cơ sở vật chất, hạ
               tầng nhằm phục vụ tốt nhất nhu cầu của khách hàng. Chính vì vậy 90% khách hàng
               khi đến và trải nghiệm dịch vụ tại Nha khoa Alisa đều cảm thấy hài lòng và an
