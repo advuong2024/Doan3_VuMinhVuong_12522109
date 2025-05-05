@@ -23,9 +23,9 @@
         "primeflex": "3.3.0",
         "primeicons": "^6.0.1",
         "primereact": "9.2.2",
-        "quill": "^2.0.3",
         "react": "18.2.0",
         "react-dom": "18.2.0",
+        "react-quill": "^2.0.0",
         "react-router-dom": "^7.4.0"
     },
     "devDependencies": {
