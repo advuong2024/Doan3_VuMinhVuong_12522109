@@ -117,7 +117,7 @@ export const QuillToolbar = (props) => {
         <option value="4">Heading 4</option>
         <option value="5">Heading 5</option>
         <option value="6">Heading 6</option>
-        <option value="" selected>Normal</option>
+        <option value="">Normal</option>
       </select>
     </span>
     <span className="ql-formats">
