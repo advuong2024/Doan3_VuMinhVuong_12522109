@@ -1,20 +1,23 @@
 // export default PostForm;
-import { useCallback, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
-import { Editor } from 'primereact/editor';
 import { Calendar } from 'primereact/calendar';
 import { Dropdown } from 'primereact/dropdown';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import { NewService } from '../../../demo/service/NewService';
 import dynamic from 'next/dynamic';
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
-import EditorToolbar, { modules, formats } from "../../../demo/components/EditorToolbar";
+import { modules, formats } from "../../../demo/components/EditorToolbar";
+const EditorToolbar = dynamic(() => import('../../../demo/components/EditorToolbar'), { ssr: false });
 import "react-quill/dist/quill.snow.css";
 import "./TextEditor.module.css";
+import { BacsiService } from '../../../demo/service/BacsiService';
 
 const PostForm = () => {
-  const { id } = useParams();
+  const router = useRouter();
+  const { id } = router.query;
+  const [bacsi, setBacsi] = useState([]);
   // const navigate = useNavigate();
   const [post, setPost] = useState({
     tintuc_id: '',
@@ -38,19 +41,26 @@ const PostForm = () => {
     { label: 'Đã xóa', value: 'Đã xóa' },
   ];
 
-
-
   // Lấy dữ liệu bài viết nếu là chỉnh sửa
   useEffect(() => {
     if (id) {
-      axios.get(`http://localhost:5000/posts/${id}`).then((res) => {
-        setPost({
-          ...res.data,
-          publish_date: res.data.publish_date ? new Date(res.data.publish_date) : null,
-        });
+      NewService.gettintucbyid(id).then((data) => {
+        if (data) {
+          setPost(data);
+        }
       });
     }
   }, [id]);
+
+  useEffect(() => {
+    let isMounted = true;
+      BacsiService.getbacsi().then(data => {
+        if (isMounted) {
+          setBacsi(data);
+        }
+    });
+    return () => { isMounted = false; };
+  }, []);
 
   // Lưu bài viết (thêm hoặc sửa)
   const savePost = () => {
@@ -94,6 +104,27 @@ const PostForm = () => {
             formats={formats}
             style={{height: '300px'}}
           />
+        </div>
+        <div className="field">
+          <label>Nha Sĩ</label>
+          <select
+            className={`w-full p-3 border `}
+            value={post.tac_gia}
+            onChange={(e) => {
+              setPost({ ...post, tac_gia: e.target.value });
+              // setErrors({ ...errors, bacsi_id: '' });
+            }}
+          >
+          <option value="">-- Chọn Nha sĩ --</option>
+            {bacsi.map(bs => (
+              <option key={bs.bacsi_id} value={bs.bacsi_id}>
+                {bs.hoten}
+              </option>
+            ))}
+          </select>
+          {/* {errors.bacsi_id && (
+            <small className="p-error block">{errors.bacsi_id}</small>
+          )} */}
         </div>
         <div className="p-field">
           <label>Hình ảnh (URL)</label>

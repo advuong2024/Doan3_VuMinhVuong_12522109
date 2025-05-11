@@ -17,6 +17,25 @@ export const NewService = {
             return [];
         });
     },
+    gettintucbyid(id) {
+        return fetch(`http://localhost:3000/tintucs/${id}`, {
+            method: 'GET',
+            headers: {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'},
+        })
+        .then((res) => {
+            if (!res.ok) {
+                throw new Error(`Lỗi: ${res.status} ${res.statusText}`);
+            }
+            return res.json(); // Trả về dữ liệu phản hồi từ server
+        })
+        .then((data) => {
+            return data;
+        })
+        .catch((error) => {
+            console.error("Lỗi khi lấy tin tức:", error);
+            return null;
+        });
+    },
     posttintuc(tintuc){
         return fetch('http://localhost:3000/tintucs', {
             method: 'POST',

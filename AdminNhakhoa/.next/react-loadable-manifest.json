@@ -1,12 +1,6 @@
 {
-  "..\\node_modules\\primereact\\chart\\chart.esm.js -> chart.js/auto": {
-    "id": "..\\node_modules\\primereact\\chart\\chart.esm.js -> chart.js/auto",
-    "files": [
-      "static/chunks/node_modules_chart_js_auto_auto_js.js"
-    ]
-  },
-  "..\\node_modules\\primereact\\editor\\editor.esm.js -> quill": {
-    "id": "..\\node_modules\\primereact\\editor\\editor.esm.js -> quill",
+  "tintuc\\addnew\\index.js -> ../../../demo/components/EditorToolbar": {
+    "id": "tintuc\\addnew\\index.js -> ../../../demo/components/EditorToolbar",
     "files": []
   },
   "tintuc\\addnew\\index.js -> react-quill": {

@@ -184,7 +184,7 @@ const Khachhang = () => {
                 const newKhachhang = await KhachhangService.postkhachhang(_khachhang);
                 setKhachhangs([...khachhangs, newKhachhang]);
                 toast.current.show({ severity: 'success', summary: 'Thành công', detail: 'Thêm khách hàng mới', life: 3000 });
-            }
+            } 
             
             setKhachhangDialog(false);
             setKhachhang(emptyKhachhang);
