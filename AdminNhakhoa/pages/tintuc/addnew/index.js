@@ -1,47 +1,59 @@
-// export default PostForm;
-import { useState, useEffect } from 'react';
-import { Button } from 'primereact/button';
-import { InputText } from 'primereact/inputtext';
-import { Calendar } from 'primereact/calendar';
-import { Dropdown } from 'primereact/dropdown';
-import { useRouter } from 'next/router';
-import { NewService } from '../../../demo/service/NewService';
-import dynamic from 'next/dynamic';
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+import { useState, useEffect, useRef } from "react";
+import { Button } from "primereact/button";
+import { InputText } from "primereact/inputtext";
+import { Calendar } from "primereact/calendar";
+import { Dropdown } from "primereact/dropdown";
+import { useRouter } from "next/router";
+// import axios from "axios";
+import dynamic from "next/dynamic";
+const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+const QuillToolbar = dynamic(() => import("../../../demo/components/EditorToolbar"), { ssr: false });
 import { modules, formats } from "../../../demo/components/EditorToolbar";
-const EditorToolbar = dynamic(() => import('../../../demo/components/EditorToolbar'), { ssr: false });
 import "react-quill/dist/quill.snow.css";
 import "./TextEditor.module.css";
-import { BacsiService } from '../../../demo/service/BacsiService';
+import { NewService } from "../../../demo/service/NewService";
+import { BacsiService } from "../../../demo/service/BacsiService";
 
 const PostForm = () => {
+  const emptyPost = {
+    tintuc_id: "",
+    tieu_de: "",
+    noi_dung: "",
+    ngay_dang: new Date().toISOString().split('T')[0],
+    tac_gia: "",
+    anh_tin_tuc: "",
+    loai_tin: "",
+    trang_thai: "Nháp",
+  };
   const router = useRouter();
   const { id } = router.query;
   const [bacsi, setBacsi] = useState([]);
-  // const navigate = useNavigate();
-  const [post, setPost] = useState({
-    tintuc_id: '',
-    tieu_de: '',
-    noi_dung: '',
-    ngay_dang: '',
-    tac_gia: '',
-    anh_tin_tuc: '',
-    loai_tin: '',
-    trang_thai: 'Nháp',
-  });
-
+  const [isClient, setIsClient] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [submitted, setSubmitted] = useState(false);
+  const toast = useRef(null);
+  const [post, setPost] = useState(emptyPost);
   const categories = [
-    { label: 'Dịch vụ', value: 'Dịch vụ' },
-    { label: 'Giá dich vụ', value: 'Giá dịch vụ' },
+    { label: "Dịch vụ", value: "Dịch vụ" },
+    { label: "Giá dich vụ", value: "Giá dịch vụ" },
   ];
 
   const statuses = [
-    { label: 'Nháp', value: 'Nháp' },
-    { label: 'Công khai', value: 'Công khai' },
-    { label: 'Đã xóa', value: 'Đã xóa' },
+    { label: "Nháp", value: "Nháp" },
+    { label: "Công khai", value: "Công khai" },
+    { label: "Đã xóa", value: "Đã xóa" },
   ];
 
-  // Lấy dữ liệu bài viết nếu là chỉnh sửa
+  useEffect(() => {
+    setIsClient(true); // Đánh dấu là client-side
+  }, []);
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const d = new Date(dateString);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
   useEffect(() => {
     if (id) {
       NewService.gettintucbyid(id).then((data) => {
@@ -54,35 +66,68 @@ const PostForm = () => {
 
   useEffect(() => {
     let isMounted = true;
-      BacsiService.getbacsi().then(data => {
-        if (isMounted) {
-          setBacsi(data);
-        }
+    BacsiService.getbacsi().then((data) => {
+      if (isMounted) {
+        setBacsi(data);
+      }
     });
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  // Lưu bài viết (thêm hoặc sửa)
-  const savePost = () => {
-    const postData = {
-      ...post,
-      publish_date: post.publish_date ? post.publish_date.toISOString() : null,
-    };
+  const createId = () => {
+    return Math.random().toString(36).substr(2, 9);
+  };
 
-    if (id) {
-      axios.put(`http://localhost:5000/posts/${id}`, postData).then(() => {
-        navigate('/posts');
-      });
-    } else {
-      axios.post('http://localhost:5000/posts', postData).then(() => {
-        navigate('/posts');
-      });
+  const savePost = () => {
+    setSubmitted(true);
+
+    let _post = { ...post };
+    _post.ngay_dang = new Date().toISOString().split('T')[0];
+
+    try{
+      if (id) {
+        NewService.update(_post,id,selectedImage).then(() => {
+          toast.current.show({
+            severity: "success",
+            summary: "Thành công",
+            detail: "Cập nhật bài viết thành công",
+            life: 3000,
+          });
+          router.push("/tintuc");
+        });
+      } else {
+        _post.tintuc_id = createId();
+        NewService.create(_post,selectedImage).then(() => {
+          toast.current.show({
+            severity: "success",
+            summary: "Thành công",
+            detail: "Thêm bài viết thành công",
+            life: 3000,
+          });
+          router.push("/tintuc");
+        });
+      }
+      setPost(emptyPost);
+      setSelectedImage(null);
+    } catch (error) {
+      toast.current.show({ severity: "error", summary: "Lỗi", detail: "Có lỗi xảy ra khi lưu bài viết", life: 3000 });
+    }
+  };
+
+  const onFileUpload = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedImage(e.target.files[0]);
+      setPost({ ...post, anh_tin_tuc: e.target.files[0].name });
     }
   };
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">{id ? 'Sửa bài viết' : 'Thêm bài viết'}</h1>
+      <h1 className="text-2xl font-bold mb-4">
+        {id ? "Sửa bài viết" : "Thêm bài viết"}
+      </h1>
       <div className="p-fluid">
         <div className="p-field">
           <label>Tiêu đề</label>
@@ -92,47 +137,57 @@ const PostForm = () => {
             className="w-full"
           />
         </div>
-        <div className='p-field'>
+        <div className="p-field">
           <label>Nội dung</label>
-          <EditorToolbar toolbarId={'t1'} />
-          <ReactQuill 
-            theme="snow"
-            value={post.noi_dung}
-            onChange={(value) => setPost({ ...post, noi_dung: value})}
-            placeholder={"Mời nhập nội dung..."}
-            modules={modules('t1')}
-            formats={formats}
-            style={{height: '300px'}}
-          />
+          {isClient && (
+            <>
+              <QuillToolbar toolbarId={"t1"} />
+              <ReactQuill
+                theme="snow"
+                value={post.noi_dung}
+                onChange={(value) => setPost({ ...post, noi_dung: value })}
+                placeholder={"Mời nhập nội dung..."}
+                modules={modules("t1")}
+                formats={formats}
+                style={{ height: "300px", backgroundColor: "#fff" }}
+              />
+            </>
+          )}
         </div>
-        <div className="field">
+        {/* <div className="field">
           <label>Nha Sĩ</label>
           <select
-            className={`w-full p-3 border `}
+            className="w-full p-3 border"
             value={post.tac_gia}
-            onChange={(e) => {
-              setPost({ ...post, tac_gia: e.target.value });
-              // setErrors({ ...errors, bacsi_id: '' });
-            }}
+            onChange={(e) => setPost({ ...post, tac_gia: e.target.value })}
           >
-          <option value="">-- Chọn Nha sĩ --</option>
-            {bacsi.map(bs => (
+            <option value="">-- Chọn Nha sĩ --</option>
+            {bacsi.map((bs) => (
               <option key={bs.bacsi_id} value={bs.bacsi_id}>
                 {bs.hoten}
               </option>
             ))}
           </select>
-          {/* {errors.bacsi_id && (
-            <small className="p-error block">{errors.bacsi_id}</small>
-          )} */}
-        </div>
-        <div className="p-field">
-          <label>Hình ảnh (URL)</label>
-          <InputText
-            value={post.image_url}
-            onChange={(e) => setPost({ ...post, image_url: e.target.value })}
-            className="w-full"
+        </div> */}
+        <div className="p-field p-2 mt-2 bg-white" style={{ border: "1px solid #CCC", borderRadius: "8px" , display: "flex"}}>
+          <label htmlFor="anh_tin_tuc">Ảnh dịch vụ</label>
+          <input 
+            id="anh_tin_tuc"
+            type="file" 
+            accept="image/*" 
+            onChange={onFileUpload} 
+            // className={errors.anh_tin_tuc ? 'p-invalid' : ''}
           />
+          {/* {errors.anh_tin_tuc && <small className="p-error">{errors.anh_tin_tuc}</small>} */}
+          {selectedImage && (
+            <img 
+              src={URL.createObjectURL(selectedImage)} 
+              alt="Ảnh xem trước" 
+              width="200" 
+              height="120" 
+              style={{ objectFit: 'cover', borderRadius: '8px', marginTop: '10px' }} 
+            />
+          )}
         </div>
         <div className="p-field">
           <label>Danh mục</label>
@@ -152,23 +207,34 @@ const PostForm = () => {
             className="w-full"
           />
         </div>
-        <div className="p-field">
+        <div className="field">
           <label>Ngày đăng</label>
-          <Calendar
-            value={post.publish_date}
-            onChange={(e) => setPost({ ...post, publish_date: e.value })}
-            showTime
-            hourFormat="24"
-            className="w-full"
+          <InputText
+            type="date"
+            // className={`w-full ${errors.ngaytao ? 'p-invalid' : ''}`}
+            value={post.ngay_dang ? formatDate(post.ngay_dang) : ""}
+            readOnly
+            onChange={(e) => {
+              setPost({ ...post, ngay_dang: e.target.value });
+              // setErrors({ ...errors, ngaytao: '' });
+          }}
           />
+          {/* {errors.ngaytao && (
+            <small className="p-error block">{errors.ngaytao}</small>
+          )} */}
         </div>
       </div>
       <div className="p-mt-4 pt-3">
-        <Button label="Lưu" icon="pi pi-check"  onClick={savePost} className="p-mr-2 mr-4" />
+        <Button
+          label="Lưu"
+          icon="pi pi-check"
+          onClick={savePost}
+          className="p-mr-2 mr-4"
+        />
         <Button
           label="Hủy"
           icon="pi pi-times"
-          onClick={() => navigate('/posts')}
+          onClick={() => router.push("/tintuc")}
           className="p-button-secondary"
         />
       </div>

@@ -568,6 +568,7 @@ const Hoadon = () => {
                                 type="date"
                                 className={`w-full ${errors.ngaytao ? 'p-invalid' : ''}`}
                                 value={hoadon.ngaytao ? formatDate(hoadon.ngaytao) : ""}
+                                readOnly
                                 onChange={(e) => {
                                     setHoadon({ ...hoadon, ngaytao: e.target.value });
                                     setErrors({ ...errors, ngaytao: '' });
