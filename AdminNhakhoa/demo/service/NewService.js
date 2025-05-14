@@ -36,7 +36,18 @@ export const NewService = {
             return null;
         });
     },
-    posttintuc(tintuc){
+    posttintuc(tintuc, file){
+        const formData = new FormData();
+
+        formData.append('tieu_de', tintuc.tieu_de);
+        formData.append('noi_dung', tintuc.noi_dung);
+        formData.append('ngay_dang', tintuc.ngay_dang);
+        formData.append('tac_gia', tintuc.tac_gia);
+        formData.append('loai_tin', tintuc.loai_tin);
+        formData.append('trang_thai', tintuc.trang_thai);
+        if (file) {
+            formData.append('anh_tin_tuc', file);
+        }
         return fetch('http://localhost:3000/tintucs', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'},
@@ -57,7 +68,18 @@ export const NewService = {
             return null;
         });
     },
-    puttintuc(id, tintuc){
+    puttintuc(id, tintuc, file){
+         const formData = new FormData();
+
+        formData.append('tieu_de', tintuc.tieu_de);
+        formData.append('noi_dung', tintuc.noi_dung);
+        formData.append('ngay_dang', tintuc.ngay_dang);
+        formData.append('tac_gia', tintuc.tac_gia);
+        formData.append('loai_tin', tintuc.loai_tin);
+        formData.append('trang_thai', tintuc.trang_thai);
+        if (file) {
+            formData.append('anh_tin_tuc', file);
+        }
         return fetch(`http://localhost:3000/tintucs/${id}`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json', 'Cache-Control': 'no-cache'},

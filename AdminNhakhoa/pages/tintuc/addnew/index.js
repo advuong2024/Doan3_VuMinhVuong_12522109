@@ -4,6 +4,7 @@ import { InputText } from "primereact/inputtext";
 import { Calendar } from "primereact/calendar";
 import { Dropdown } from "primereact/dropdown";
 import { useRouter } from "next/router";
+import { Toast } from 'primereact/toast';
 // import axios from "axios";
 import dynamic from "next/dynamic";
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
@@ -85,10 +86,15 @@ const PostForm = () => {
 
     let _post = { ...post };
     _post.ngay_dang = new Date().toISOString().split('T')[0];
+    const payload = JSON.stringify(_post);
+    const payloadSize = new TextEncoder().encode(payload).length;
+    if (payloadSize > 5 * 1024 * 1024) { // Giới hạn 5MB
+        throw new Error('Dữ liệu quá lớn, vui lòng giảm kích thước nội dung hoặc tệp');
+    }
 
     try{
       if (id) {
-        NewService.update(_post,id,selectedImage).then(() => {
+        NewService.puttintuc(_post,id,selectedImage).then(() => {
           toast.current.show({
             severity: "success",
             summary: "Thành công",
@@ -99,7 +105,7 @@ const PostForm = () => {
         });
       } else {
         _post.tintuc_id = createId();
-        NewService.create(_post,selectedImage).then(() => {
+        NewService.posttintuc(_post,selectedImage).then(() => {
           toast.current.show({
             severity: "success",
             summary: "Thành công",
@@ -112,6 +118,7 @@ const PostForm = () => {
       setPost(emptyPost);
       setSelectedImage(null);
     } catch (error) {
+      console.error("Lỗi khi lưu tin tức mới:", error);
       toast.current.show({ severity: "error", summary: "Lỗi", detail: "Có lỗi xảy ra khi lưu bài viết", life: 3000 });
     }
   };
@@ -125,6 +132,7 @@ const PostForm = () => {
 
   return (
     <div className="p-4">
+      <Toast ref={toast} />
       <h1 className="text-2xl font-bold mb-4">
         {id ? "Sửa bài viết" : "Thêm bài viết"}
       </h1>
@@ -154,7 +162,7 @@ const PostForm = () => {
             </>
           )}
         </div>
-        {/* <div className="field">
+        <div className="field">
           <label>Nha Sĩ</label>
           <select
             className="w-full p-3 border"
@@ -168,7 +176,7 @@ const PostForm = () => {
               </option>
             ))}
           </select>
-        </div> */}
+        </div>
         <div className="p-field p-2 mt-2 bg-white" style={{ border: "1px solid #CCC", borderRadius: "8px" , display: "flex"}}>
           <label htmlFor="anh_tin_tuc">Ảnh dịch vụ</label>
           <input 

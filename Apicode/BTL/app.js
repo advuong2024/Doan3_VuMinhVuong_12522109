@@ -11,6 +11,11 @@ var app = express();
 app.use(cors());
 // const multer = require('multer');
 // const upload = require('./middlewares/upload');
+// ✅ Cho phép JSON lớn (ví dụ 10MB)
+app.use(express.json({ limit: '10mb' }));
+
+// ✅ Cho phép form-urlencoded lớn
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
