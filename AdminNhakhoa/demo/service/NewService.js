@@ -151,8 +151,7 @@ export const NewService = {
             return res.json();
         })
         .then((data) => {
-            const filePath = data.filePath.reolace(/\\/g, "/");
-            const imageUrl = `http://localhost:3000/uploads/${filePath}`
+            const imageUrl = data.url;
             console.log('Upload ảnh thành công:', imageUrl);
             return imageUrl;
         })

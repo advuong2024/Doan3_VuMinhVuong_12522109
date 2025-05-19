@@ -33,6 +33,7 @@ const PostForm = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const toast = useRef(null);
+  const quillRef = useRef(null);
   const [post, setPost] = useState(emptyPost);
   const categories = [
     { label: "Dịch vụ", value: "Dịch vụ" },
@@ -151,11 +152,12 @@ const PostForm = () => {
             <>
               <QuillToolbar toolbarId={"t1"} />
               <ReactQuill
+                ref={quillRef}
                 theme="snow"
                 value={post.noi_dung}
                 onChange={(value) => setPost({ ...post, noi_dung: value })}
                 placeholder={"Mời nhập nội dung..."}
-                modules={modules("t1")}
+                modules={modules("t1", quillRef)}
                 formats={formats}
                 style={{ height: "300px", backgroundColor: "#fff" }}
               />

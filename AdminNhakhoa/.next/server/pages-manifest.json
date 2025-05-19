@@ -1,8 +1,6 @@
 {
   "/_app": "pages/_app.js",
-  "/_document": "pages/_document.js",
   "/_error": "pages/_error.js",
-  "/tintuc/addnew": "pages/tintuc/addnew.js",
-  "/404": "pages/404.js",
-  "/tintuc": "pages/tintuc.js"
+  "/_document": "pages/_document.js",
+  "/tintuc/addnew": "pages/tintuc/addnew.js"
 }

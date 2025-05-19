@@ -1,4 +1,5 @@
 import React from "react";
+import { uploadImage } from '../service/NewService';
 
 // Custom Undo và Redo icons
 const CustomUndo = () => (
@@ -34,13 +35,37 @@ function redoChange() {
   }
 }
 
+const imageHandler = (quillRef) => {
+  const input = document.createElement("input");
+  input.setAttribute("type", "file");
+  input.setAttribute("accept", "image/*");
+  input.click();
+
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (file) {
+      const formData = new FormData();
+      formData.append("imgae", file);
+      try{
+        const url = await uploadImage(formData);
+        const quill = quillRef.current.getEditor();
+        const range = quill.getSelection(true);
+        quill.insertEmbed(range.index, "image", url);
+      } catch (error) {
+        console.error("lỗi khi chèn ảnh:", error);
+      }
+    }
+  };
+};
+
 // Xuất modules và formats
-export const modules = (toolbarId) => ({
+export const modules = (toolbarId, quillRef) => ({
   toolbar: {
     container: "#" + toolbarId,
     handlers: {
       undo: undoChange,
       redo: redoChange,
+      image: () => imageHandler(quillRef),
     },
   },
   history: {
