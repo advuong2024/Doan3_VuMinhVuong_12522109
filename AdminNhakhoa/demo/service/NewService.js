@@ -69,7 +69,7 @@ export const NewService = {
         });
     },
     puttintuc(id, tintuc, file){
-         const formData = new FormData();
+        const formData = new FormData();
 
         formData.append('tieu_de', tintuc.tieu_de);
         formData.append('noi_dung', tintuc.noi_dung);
@@ -140,25 +140,50 @@ export const NewService = {
         return null;
     },
     uploadImage(formData) {
+        // const formData = new FormData();
+        // formData.append('image', file);
         return fetch('http://localhost:3000/image/uploadImage', {
           method: 'POST',
           body: formData,
         })
         .then((res) => {
-            if (!res.ok) {
-              throw new Error(`Lỗi: ${res.status} ${res.statusText}`);
+        if (!res.ok) {
+          return res.text().then((text) => {
+            try {
+              const errorData = JSON.parse(text);
+              throw new Error(
+                `Lỗi: ${res.status} ${res.statusText} - ${
+                  errorData.message || text || "Không xác định"
+                }`
+              );
+            } catch {
+              throw new Error(`Lỗi: ${res.status} ${res.statusText} - ${text}`);
             }
-            return res.json();
-        })
-        .then((data) => {
-            const imageUrl = data.url;
-            console.log('Upload ảnh thành công:', imageUrl);
-            return imageUrl;
-        })
-        .catch((error) => {
-            console.error('Lỗi khi upload ảnh:', error);
-            throw error;
-        });
+          });
+        }
+        return res.json();
+      })
+      .then((data) => {
+        let url, message;
+        if (typeof data === "string") {
+          // Nếu server trả về chuỗi URL
+          url = data;
+          message = "Upload thành công";
+        } else {
+          // Nếu server trả về object
+          url = data.url ? `http://localhost:3000${data.url}` : null;
+          message = data.message || "Upload thành công";
+        }
+        if (!url) {
+          throw new Error("Không nhận được URL ảnh từ server");
+        }
+        console.log("Upload ảnh thành công, URL:", url);
+        return { message, url };
+      })
+      .catch((error) => {
+        console.error("Lỗi khi upload ảnh:", error);
+        throw error;
+      });
     },
 };
 

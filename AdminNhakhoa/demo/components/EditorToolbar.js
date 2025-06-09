@@ -1,5 +1,5 @@
-import React from "react";
-import { uploadImage } from '../service/NewService';
+import React, { useRef } from "react";
+import { NewService } from '../service/NewService';
 
 // Custom Undo và Redo icons
 const CustomUndo = () => (
@@ -43,17 +43,40 @@ const imageHandler = (quillRef) => {
 
   input.onchange = async () => {
     const file = input.files[0];
-    if (file) {
-      const formData = new FormData();
-      formData.append("imgae", file);
-      try{
-        const url = await uploadImage(formData);
-        const quill = quillRef.current.getEditor();
-        const range = quill.getSelection(true);
-        quill.insertEmbed(range.index, "image", url);
-      } catch (error) {
-        console.error("lỗi khi chèn ảnh:", error);
+    if (!file) {
+      console.error("Vui lòng chọn một file ảnh!");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await NewService.uploadImage(formData); // Đợi kết quả
+      console.log("Response từ NewService.uploadImage:", response);
+      if (!response?.url) {
+        throw new Error("Không nhận được URL ảnh từ server");
       }
+
+      const quill = quillRef.current;
+      if (!quill) {
+        console.log("quillRef.current:", quillRef.current);
+        throw new Error("Quill editor không được khởi tạo!");
+      }
+
+      // Lấy vùng chọn, nếu không có thì dùng vị trí cuối
+      quill.focus();
+      let range = quill.getSelection();
+      if (!range) {
+        const length = quill.getLength();
+        range = { index: length - 1, length: 0 };
+      }
+
+      // Chèn ảnh
+      quill.insertEmbed(range.index, "image", response.url);
+      quill.setSelection(range.index + 1); // Di chuyển con trỏ sau ảnh
+    } catch (error) {
+      console.error("Lỗi khi chèn ảnh:", error);
     }
   };
 };
@@ -65,7 +88,7 @@ export const modules = (toolbarId, quillRef) => ({
     handlers: {
       undo: undoChange,
       redo: redoChange,
-      image: () => imageHandler(quillRef),
+      image: imageHandler,
     },
   },
   history: {

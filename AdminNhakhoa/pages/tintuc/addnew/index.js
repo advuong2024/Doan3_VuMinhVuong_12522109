@@ -150,14 +150,14 @@ const PostForm = () => {
           <label>Nội dung</label>
           {isClient && (
             <>
-              <QuillToolbar toolbarId={"t1"} />
+              <QuillToolbar toolbarId={"toolbar"} />
               <ReactQuill
                 ref={quillRef}
                 theme="snow"
                 value={post.noi_dung}
                 onChange={(value) => setPost({ ...post, noi_dung: value })}
                 placeholder={"Mời nhập nội dung..."}
-                modules={modules("t1", quillRef)}
+                modules={modules("toolbar")}
                 formats={formats}
                 style={{ height: "300px", backgroundColor: "#fff" }}
               />
@@ -172,30 +172,37 @@ const PostForm = () => {
             onChange={(e) => setPost({ ...post, tac_gia: e.target.value })}
           >
             <option value="">-- Chọn Nha sĩ --</option>
-            {bacsi.map((bs) => (
-              <option key={bs.bacsi_id} value={bs.bacsi_id}>
-                {bs.hoten}
+            {Array.isArray(bacsi) && bacsi.length > 0 ? (
+              bacsi.map((bs) => (
+                <option key={bs.bacsi_id} value={bs.bacsi_id}>
+                  {bs.hoten}
+                </option>
+              ))
+            ) : (
+              <option value="" disabled>
+                Không có dữ liệu
               </option>
-            ))}
+            )}
           </select>
         </div>
-        <div className="p-field p-2 mt-2 bg-white" style={{ border: "1px solid #CCC", borderRadius: "8px" , display: "flex"}}>
+        <div
+          className="p-field p-2 mt-2 bg-white"
+          style={{ border: "1px solid #CCC", borderRadius: "8px", display: "flex" }}
+        >
           <label htmlFor="anh_tin_tuc">Ảnh dịch vụ</label>
-          <input 
+          <input
             id="anh_tin_tuc"
-            type="file" 
-            accept="image/*" 
-            onChange={onFileUpload} 
-            // className={errors.anh_tin_tuc ? 'p-invalid' : ''}
+            type="file"
+            accept="image/*"
+            onChange={onFileUpload}
           />
-          {/* {errors.anh_tin_tuc && <small className="p-error">{errors.anh_tin_tuc}</small>} */}
           {selectedImage && (
-            <img 
-              src={URL.createObjectURL(selectedImage)} 
-              alt="Ảnh xem trước" 
-              width="200" 
-              height="120" 
-              style={{ objectFit: 'cover', borderRadius: '8px', marginTop: '10px' }} 
+            <img
+              src={URL.createObjectURL(selectedImage)}
+              alt="Ảnh xem trước"
+              width="200"
+              height="120"
+              style={{ objectFit: "cover", borderRadius: "8px", marginTop: "10px" }}
             />
           )}
         </div>
@@ -221,17 +228,12 @@ const PostForm = () => {
           <label>Ngày đăng</label>
           <InputText
             type="date"
-            // className={`w-full ${errors.ngaytao ? 'p-invalid' : ''}`}
             value={post.ngay_dang ? formatDate(post.ngay_dang) : ""}
             readOnly
             onChange={(e) => {
               setPost({ ...post, ngay_dang: e.target.value });
-              // setErrors({ ...errors, ngaytao: '' });
-          }}
+            }}
           />
-          {/* {errors.ngaytao && (
-            <small className="p-error block">{errors.ngaytao}</small>
-          )} */}
         </div>
       </div>
       <div className="p-mt-4 pt-3">

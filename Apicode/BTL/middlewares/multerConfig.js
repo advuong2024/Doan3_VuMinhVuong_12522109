@@ -3,11 +3,10 @@ const path = require("path");
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/"); // Thư mục lưu ảnh
+    cb(null, "./uploads/"); // Thư mục lưu ảnh
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    cb(null, `${Date.now()}-${file.originalname}`); // Tên file lưu trữ
   },
 });
 

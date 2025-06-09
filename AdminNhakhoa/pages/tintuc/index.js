@@ -4,7 +4,7 @@ import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { Toast } from 'primereact/toast';
 import { InputText } from 'primereact/inputtext';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from "next/router";
 import { NewService } from '../../demo/service/NewService'
 import { BacsiService } from '../../demo/service/BacsiService'
 
@@ -16,7 +16,7 @@ const PostList = () => {
   const [bacsis, setBacsis] = useState([]);
   const [globalFilter, setGlobalFilter] = useState(null);
   const toast = useRef(null);
-//   const navigate = useNavigate();
+  const navigate = useRouter();
 
   // Lấy danh sách bài viết từ backend
  useEffect(() => {
@@ -47,10 +47,10 @@ const PostList = () => {
     // });
   };
 
-  // Chuyển hướng đến trang sửa bài viết
-  // const editPost = (id) => {
-  //   navigate(`/posts/edit/${id}`);
-  // };
+  //Chuyển hướng đến trang sửa bài viết
+  const editPost = (id) => {
+    navigate.push(`/tintuc/addnew/`);
+  };
 
   // Template cho cột hành động
   const actionTemplate = (rowData) => (
